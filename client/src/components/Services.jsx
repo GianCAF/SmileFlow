@@ -16,7 +16,7 @@ const Services = () => {
                 <p className="text-blush mt-2 font-medium">Especialidades diseñadas para tu bienestar</p>
 
                 {/* Contenedor del abanico */}
-                <div className="relative mt-20 flex justify-center items-center h-[400px]">
+                <div className="relative mt-32 flex justify-center items-center h-[500px]">
                     {services.map((service, index) => {
                         // Calculamos el ángulo para que las cartas se distribuyan en abanico
                         const angle = (index - (services.length - 1) / 2) * 25;
