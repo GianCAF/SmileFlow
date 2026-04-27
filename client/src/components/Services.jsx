@@ -35,7 +35,7 @@ const Services = () => {
                                     rotate: 0,
                                     scale: 1.1,
                                     zIndex: 50,
-                                    y: -20,
+                                    y: -40
                                     boxShadow: "0px 20px 40px rgba(211, 126, 145, 0.3)"
                                 }}
                                 transition={{
