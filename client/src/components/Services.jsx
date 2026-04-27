@@ -19,7 +19,7 @@ const Services = () => {
                 <div className="relative mt-20 flex justify-center items-center h-[400px]">
                     {services.map((service, index) => {
                         // Calculamos el ángulo para que las cartas se distribuyan en abanico
-                        const angle = (index - (services.length - 1) / 2) * 15;
+                        const angle = (index - (services.length - 1) / 2) * 25;
 
                         return (
                             <motion.div
