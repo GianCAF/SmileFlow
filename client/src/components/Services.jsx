@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react'; 
 import { motion } from 'framer-motion';
 
 const services = [
@@ -9,21 +9,24 @@ const services = [
 ];
 
 const Services = () => {
+    const [hoveredIndex, setHoveredIndex] = useState(null);
     return (
-        <section className="py-20 bg-white min-h-[600px]">
+        <section className="py-20 bg-white min-h-[700px]">
             <div className="container mx-auto px-6 text-center">
                 <h2 className="text-4xl font-bold text-gray-900">Servicios Premium</h2>
-                <p className="text-blush mt-2 font-medium">Especialidades diseñadas para tu bienestar</p>
+                <p className="text-blush mt-32 font-medium">Especialidades diseñadas para tu bienestar</p>
 
                 {/* Contenedor del abanico */}
                 <div className="relative mt-32 flex justify-center items-center h-[500px]">
                     {services.map((service, index) => {
                         // Calculamos el ángulo para que las cartas se distribuyan en abanico
                         const angle = (index - (services.length - 1) / 2) * 25;
-
+                        const isBlocked = hoveredIndex !== null && hoveredIndex !== index;
                         return (
                             <motion.div
                                 key={service.id}
+                                onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseLeave={() => setHoveredIndex(null)}
                                 initial={{ rotate: 0, opacity: 0, y: 100 }}
                                 whileInView={{
                                     rotate: angle,
@@ -34,32 +37,34 @@ const Services = () => {
                                 whileHover={{
                                     rotate: 0,
                                     scale: 1.1,
-                                    zIndex: 50,
-                                    y: -40
-                                    boxShadow: "0px 20px 40px rgba(211, 126, 145, 0.3)"
+                                    zIndex: 100, // Forzamos que siempre esté arriba
+                                    y: -40,
                                 }}
                                 transition={{
                                     type: 'spring',
-                                    stiffness: 260,
-                                    damping: 20,
-                                    delay: index * 0.1
+                                    stiffness: 300,
+                                    damping: 20
                                 }}
-                                style={{ originY: 1.2 }} // Punto de rotación por debajo de la carta
-                                className="absolute w-60 h-80 bg-lavender border border-blush/30 rounded-[2rem] shadow-lg p-6 flex flex-col justify-between cursor-pointer group hover:border-blush transition-colors"
+                                style={{
+                                    originY: 1.4,
+                                    // 4. El truco maestro: pointer-events none si otra carta está activa
+                                    pointerEvents: isBlocked ? 'none' : 'auto'
+                                }}
+                                className={`absolute w-64 h-85 bg-lavender border-2 border-blush/30 rounded-[2.5rem] shadow-2xl p-8 flex flex-col justify-between cursor-pointer group transition-all duration-300 ${isBlocked ? 'opacity-50 blur-[2px]' : 'opacity-100'
+                                    }`}
                             >
-                                <span className="text-4xl group-hover:scale-110 transition-transform duration-300">
-                                    {service.icon}
-                                </span>
-                                <div className="text-left">
-                                    <h3 className="text-xl font-bold text-gray-800 group-hover:text-blush transition-colors">
+                                {/* Contenido de la carta (Icono, Título, Desc) igual que antes */}
+                                <div className="flex flex-col gap-4">
+                                    <span className="text-5xl">{service.icon}</span>
+                                    <h3 className="text-2xl font-extrabold text-gray-800 group-hover:text-blush leading-none">
                                         {service.title}
                                     </h3>
-                                    <p className="text-sm text-gray-600 mt-2">{service.desc}</p>
                                 </div>
-
-                                {/* Indicador visual de "clic" */}
-                                <div className="text-blush opacity-0 group-hover:opacity-100 text-right font-bold transition-opacity">
-                                    Agendar →
+                                <div className="text-left">
+                                    <p className="text-sm text-gray-500 font-medium leading-relaxed">{service.desc}</p>
+                                    <div className="mt-4 text-blush font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Agendar →
+                                    </div>
                                 </div>
                             </motion.div>
                         );
