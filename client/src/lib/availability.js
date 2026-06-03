@@ -27,7 +27,7 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-function toDateId(date) {
+export function toDateId(date) {
   return [
     date.getFullYear(),
     String(date.getMonth() + 1).padStart(2, '0'),
@@ -35,7 +35,7 @@ function toDateId(date) {
   ].join('-');
 }
 
-function parseRequestedDate(messageBody, now = new Date()) {
+export function parseRequestedDate(messageBody, now = new Date()) {
   const text = normalizeText(messageBody);
   const numericMatch = text.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/);
 
@@ -87,7 +87,7 @@ function minutesToTime(totalMinutes) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
-function toDisplayTime(time) {
+export function toDisplayTime(time) {
   const [hoursText, minutesText] = time.split(':');
   const hours = Number(hoursText);
   const suffix = hours >= 12 ? 'pm' : 'am';
@@ -110,7 +110,7 @@ function buildTimeSlots(startTime, endTime, slotMinutes) {
   return slots;
 }
 
-async function getAvailabilityForDate(date) {
+export async function getAvailabilityForDate(date) {
   const dayKey = String(date.getDay());
   const dateId = toDateId(date);
   const availabilitySnapshot = await getDoc(doc(db, 'clinicAvailability', dayKey));
