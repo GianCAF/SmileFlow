@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { buildAvailabilityReplyForMessage } from '../lib/availability';
 
 const menuMessage = [
@@ -40,15 +40,15 @@ const ChatIcon = () => (
 );
 
 const SendIcon = () => (
-  <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-    <path d="m4 12 16-8-4.5 16-3.2-6.3L4 12Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-    <path d="m12.3 13.7 3.2-3.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+    <path d="m4 12 16-8-4.5 16-3.2-6.3L4 12Z" stroke="currentColor" strokeWidth="2.3" strokeLinejoin="round" />
+    <path d="m12.3 13.7 3.2-3.2" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
   </svg>
 );
 
 const CloseIcon = () => (
-  <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
   </svg>
 );
 
@@ -95,6 +95,13 @@ const WebChatbot = () => {
     { role: 'bot', text: menuMessage },
   ]);
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, loading, isOpen]);
 
   const buildReply = async (text) => {
     const normalized = normalizeKeywordText(text);
@@ -177,48 +184,48 @@ const WebChatbot = () => {
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {isOpen ? (
-        <section className="flex h-[560px] w-[min(92vw,390px)] flex-col overflow-hidden rounded-[1.5rem] border border-beige bg-cream shadow-2xl shadow-dark-blush/20">
-          <header className="flex items-center justify-between border-b border-beige bg-blush px-4 py-3 text-white">
+        <section className="flex h-[560px] w-[min(92vw,390px)] flex-col overflow-hidden rounded-[1.5rem] border-2 border-dark-blush/20 bg-cream shadow-2xl shadow-dark-blush/25">
+          <header className="flex items-center justify-between border-b border-dark-blush/20 bg-blush px-4 py-3 text-white">
             <div>
               <p className="text-sm font-black">SmileFlow Chat</p>
-              <p className="text-xs font-semibold text-white/80">Disponibilidad y citas</p>
+              <p className="text-xs font-semibold text-white/85">Disponibilidad y citas</p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="grid h-9 w-9 place-items-center rounded-full bg-white/18 text-white transition hover:bg-white/28"
+              className="grid h-9 w-9 place-items-center rounded-full bg-dark-blush text-white transition hover:bg-white hover:text-dark-blush"
               aria-label="Cerrar chat"
             >
               <CloseIcon />
             </button>
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto bg-warm/60 px-4 py-4">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-warm px-4 py-4">
             {messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
                 className={`whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
                   message.role === 'bot'
-                    ? 'mr-6 bg-white text-gray-700'
+                    ? 'mr-6 bg-white text-gray-800'
                     : 'ml-6 bg-dark-blush text-white'
                 }`}
               >
                 {message.text}
               </div>
             ))}
-            {loading ? <div className="mr-6 rounded-2xl bg-white px-4 py-3 text-sm text-gray-500">Consultando...</div> : null}
+            {loading ? <div className="mr-6 rounded-2xl bg-white px-4 py-3 text-sm text-gray-600">Consultando...</div> : null}
           </div>
 
-          <form onSubmit={sendMessage} className="flex gap-2 border-t border-beige bg-cream p-3">
+          <form onSubmit={sendMessage} className="flex gap-2 border-t border-dark-blush/20 bg-cream p-3">
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Escribe tu mensaje"
-              className="min-w-0 flex-1 rounded-full border border-beige bg-white px-4 py-3 text-sm outline-none focus:border-blush"
+              className="min-w-0 flex-1 rounded-full border-2 border-beige bg-white px-4 py-3 text-sm outline-none focus:border-blush"
             />
             <button
               type="submit"
-              className="grid h-11 w-11 place-items-center rounded-full bg-blush text-white transition hover:bg-dark-blush"
+              className="grid h-12 w-12 place-items-center rounded-full bg-dark-blush text-white shadow-lg shadow-dark-blush/25 transition hover:bg-blush"
               aria-label="Enviar mensaje"
             >
               <SendIcon />
@@ -229,7 +236,7 @@ const WebChatbot = () => {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-blush px-5 py-4 text-sm font-black text-white shadow-2xl shadow-dark-blush/30 transition hover:bg-dark-blush"
+          className="inline-flex items-center gap-2 rounded-full bg-dark-blush px-5 py-4 text-sm font-black text-white shadow-2xl shadow-dark-blush/35 transition hover:bg-blush"
         >
           <ChatIcon />
           Chat
