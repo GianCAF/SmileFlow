@@ -1,5 +1,6 @@
+import { signInAnonymously } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { db } from '../firebase';
+import { auth, db } from '../firebase';
 
 const monthMap = {
   enero: 0,
@@ -18,6 +19,18 @@ const monthMap = {
 };
 
 const dayNames = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+async function ensureReadableSession() {
+  if (auth.currentUser) {
+    return;
+  }
+
+  try {
+    await signInAnonymously(auth);
+  } catch {
+    // Public Firestore rules may still allow reads during development.
+  }
+}
 
 function normalizeText(value) {
   return String(value || '')
@@ -44,9 +57,7 @@ function parseRequestedDate(messageBody, now = new Date()) {
     const month = Number(numericMatch[2]) - 1;
     let year = numericMatch[3] ? Number(numericMatch[3]) : now.getFullYear();
 
-    if (year < 100) {
-      year += 2000;
-    }
+    if (year < 100) year += 2000;
 
     const date = new Date(year, month, day);
 
@@ -95,9 +106,7 @@ function toDisplayTime(time) {
   const suffix = hours >= 12 ? 'pm' : 'am';
   const hour12 = hours % 12 || 12;
 
-  if (minutesText === '00') {
-    return `${hour12} ${suffix}`;
-  }
+  if (minutesText === '00') return `${hour12} ${suffix}`;
 
   return `${hour12}:${minutesText} ${suffix}`;
 }
@@ -115,6 +124,8 @@ function buildTimeSlots(startTime, endTime, slotMinutes) {
 }
 
 async function getAvailabilityForDate(date) {
+  await ensureReadableSession();
+
   const dayKey = String(date.getDay());
   const dateId = toDateId(date);
   const availabilitySnapshot = await getDoc(doc(db, 'clinicAvailability', dayKey));
