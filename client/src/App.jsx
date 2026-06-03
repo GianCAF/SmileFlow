@@ -3,6 +3,7 @@ import ClientPortal from './components/ClientPortal';
 import DentistDashboard from './components/DentistDashboard';
 import LoginPage from './components/LoginPage';
 import Services from './components/Services';
+import WebChatbot from './components/WebChatbot';
 import heroImage from './assets/hero.png';
 
 function App() {
@@ -41,7 +42,7 @@ function App() {
         </nav>
       </header>
 
-      <section id="inicio" className="overflow-hidden bg-beige">
+      <section id="inicio" className="overflow-hidden bg-warm">
         <div className="mx-auto grid min-h-[620px] max-w-6xl items-center gap-10 px-6 py-16 lg:grid-cols-[1.02fr_0.98fr] lg:py-20">
           <div className="max-w-2xl">
             <p className="mb-4 text-sm font-bold uppercase tracking-[0.22em] text-blush">
@@ -81,7 +82,7 @@ function App() {
 
       <main>
         <Services />
-        <section id="contacto" className="bg-beige px-6 py-16 text-gray-950">
+        <section id="contacto" className="bg-warm px-6 py-16 text-gray-950">
           <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div>
               <h2 className="text-3xl font-black">Listos para recibir pacientes</h2>
@@ -102,6 +103,7 @@ function App() {
       <footer className="bg-cream py-10 text-center text-sm text-gray-500">
         &copy; 2026 SmileFlow - Consultorio Dental Digital
       </footer>
+      <WebChatbot />
     </div>
   );
 }
