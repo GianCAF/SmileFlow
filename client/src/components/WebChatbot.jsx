@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { MessageCircle, Send, X } from 'lucide-react';
 import { buildAvailabilityReplyForMessage } from '../lib/availability';
 
 const menuMessage = [
@@ -32,6 +31,26 @@ const reminderMessage = 'Para recordar tu fecha de cita, enviame tu nombre compl
 const rescheduleMessage = 'Para cambiar o cancelar una cita, enviame tu nombre completo, fecha actual de la cita y el nuevo horario deseado.';
 const handoffMessage = 'Claro, te comunico con la dentista. Puedes escribirnos por WhatsApp para atencion personalizada.';
 const fallbackMessage = 'No estoy seguro de que opcion necesitas. Escribe Hola o Menu para ver las opciones disponibles.';
+
+const ChatIcon = () => (
+  <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+    <path d="M4 6.8C4 5.25 5.25 4 6.8 4h10.4C18.75 4 20 5.25 20 6.8v6.4c0 1.55-1.25 2.8-2.8 2.8H10l-4.4 3.2c-.66.48-1.6.01-1.6-.81V6.8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M8 9h8M8 12h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const SendIcon = () => (
+  <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+    <path d="m4 12 16-8-4.5 16-3.2-6.3L4 12Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="m12.3 13.7 3.2-3.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
 
 function normalizeKeywordText(messageBody) {
   return messageBody
@@ -148,7 +167,7 @@ const WebChatbot = () => {
     } catch {
       setMessages((current) => [...current, {
         role: 'bot',
-        text: 'No pude consultar disponibilidad en este momento. Intenta de nuevo en unos segundos.',
+        text: 'No pude consultar disponibilidad. Revisa que las reglas de Firestore permitan lectura temporal de clinicAvailability y appointments.',
       }]);
     } finally {
       setLoading(false);
@@ -158,30 +177,30 @@ const WebChatbot = () => {
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {isOpen ? (
-        <section className="flex h-[560px] w-[min(92vw,380px)] flex-col overflow-hidden rounded-[1.5rem] border border-beige bg-cream shadow-2xl shadow-blush/20">
-          <header className="flex items-center justify-between border-b border-beige bg-soft-rose px-4 py-3">
+        <section className="flex h-[560px] w-[min(92vw,390px)] flex-col overflow-hidden rounded-[1.5rem] border border-beige bg-cream shadow-2xl shadow-dark-blush/20">
+          <header className="flex items-center justify-between border-b border-beige bg-blush px-4 py-3 text-white">
             <div>
-              <p className="text-sm font-black text-gray-950">SmileFlow Chat</p>
-              <p className="text-xs font-semibold text-gray-600">Disponibilidad y citas</p>
+              <p className="text-sm font-black">SmileFlow Chat</p>
+              <p className="text-xs font-semibold text-white/80">Disponibilidad y citas</p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="grid h-9 w-9 place-items-center rounded-full bg-white text-gray-600 transition hover:text-blush"
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/18 text-white transition hover:bg-white/28"
               aria-label="Cerrar chat"
             >
-              <X className="h-4 w-4" />
+              <CloseIcon />
             </button>
           </header>
 
-          <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div className="flex-1 space-y-3 overflow-y-auto bg-warm/60 px-4 py-4">
             {messages.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
-                className={`whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-6 ${
+                className={`whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
                   message.role === 'bot'
                     ? 'mr-6 bg-white text-gray-700'
-                    : 'ml-6 bg-blush text-white'
+                    : 'ml-6 bg-dark-blush text-white'
                 }`}
               >
                 {message.text}
@@ -190,7 +209,7 @@ const WebChatbot = () => {
             {loading ? <div className="mr-6 rounded-2xl bg-white px-4 py-3 text-sm text-gray-500">Consultando...</div> : null}
           </div>
 
-          <form onSubmit={sendMessage} className="flex gap-2 border-t border-beige bg-white/70 p-3">
+          <form onSubmit={sendMessage} className="flex gap-2 border-t border-beige bg-cream p-3">
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -202,7 +221,7 @@ const WebChatbot = () => {
               className="grid h-11 w-11 place-items-center rounded-full bg-blush text-white transition hover:bg-dark-blush"
               aria-label="Enviar mensaje"
             >
-              <Send className="h-4 w-4" />
+              <SendIcon />
             </button>
           </form>
         </section>
@@ -210,9 +229,9 @@ const WebChatbot = () => {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-blush px-5 py-4 text-sm font-black text-white shadow-2xl shadow-blush/30 transition hover:bg-dark-blush"
+          className="inline-flex items-center gap-2 rounded-full bg-blush px-5 py-4 text-sm font-black text-white shadow-2xl shadow-dark-blush/30 transition hover:bg-dark-blush"
         >
-          <MessageCircle className="h-5 w-5" />
+          <ChatIcon />
           Chat
         </button>
       )}
