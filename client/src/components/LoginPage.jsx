@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
@@ -13,9 +13,7 @@ const UserIcon = () => (
 async function getProfile(user) {
   const snapshot = await getDoc(doc(db, 'users', user.uid));
 
-  if (snapshot.exists()) {
-    return snapshot.data();
-  }
+  if (snapshot.exists()) return snapshot.data();
 
   const profile = {
     displayName: user.displayName || '',
@@ -30,15 +28,14 @@ async function getProfile(user) {
 }
 
 const LoginPage = () => {
-  const [form, setForm] = useState({ email: '', password: '' });
+  const [mode, setMode] = useState('login');
+  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        return;
-      }
+      if (!user) return;
 
       setLoading(true);
       try {
@@ -60,12 +57,30 @@ const LoginPage = () => {
     }));
   };
 
-  const login = async (event) => {
+  const submit = async (event) => {
     event.preventDefault();
     setStatus('');
     setLoading(true);
 
     try {
+      if (mode === 'register') {
+        const credential = await createUserWithEmailAndPassword(auth, form.email, form.password);
+
+        if (form.name) {
+          await updateProfile(credential.user, { displayName: form.name });
+        }
+
+        await setDoc(doc(db, 'users', credential.user.uid), {
+          displayName: form.name,
+          email: form.email,
+          phone: form.phone,
+          role: 'client',
+          createdAt: serverTimestamp(),
+        });
+        window.location.href = '/portal';
+        return;
+      }
+
       await signInWithEmailAndPassword(auth, form.email, form.password);
     } catch (error) {
       setStatus(error.message);
@@ -75,14 +90,58 @@ const LoginPage = () => {
 
   return (
     <main className="grid min-h-screen place-items-center bg-warm px-6">
-      <form onSubmit={login} className="w-full max-w-md rounded-[1.75rem] bg-cream p-8 shadow-2xl shadow-dark-blush/20">
+      <form onSubmit={submit} className="w-full max-w-md rounded-[1.75rem] bg-cream p-8 shadow-2xl shadow-dark-blush/10">
         <a href="/" className="text-sm font-black uppercase tracking-[0.18em] text-blush">SmileFlow</a>
-        <h1 className="mt-2 text-3xl font-black text-gray-950">Acceso</h1>
+        <h1 className="mt-2 text-3xl font-black text-gray-950">{mode === 'login' ? 'Acceso' : 'Registro cliente'}</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600">
-          Ingresa para validar tu informacion. Si eres admin, iremos al dashboard; si eres paciente, veras tu portal.
+          {mode === 'login'
+            ? 'Ingresa para validar tu informacion. Si eres admin, iremos al dashboard; si eres paciente, veras tu portal.'
+            : 'Crea tu cuenta para consultar tu historial de citas y validar tus datos.'}
         </p>
 
-        <label className="mt-6 block">
+        <div className="mt-6 grid grid-cols-2 rounded-full bg-white p-1">
+          <button
+            type="button"
+            onClick={() => setMode('login')}
+            className={`rounded-full px-4 py-2 text-sm font-black transition ${mode === 'login' ? 'bg-blush text-white' : 'text-gray-600 hover:text-blush'}`}
+          >
+            Entrar
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('register')}
+            className={`rounded-full px-4 py-2 text-sm font-black transition ${mode === 'register' ? 'bg-blush text-white' : 'text-gray-600 hover:text-blush'}`}
+          >
+            Registrarme
+          </button>
+        </div>
+
+        {mode === 'register' ? (
+          <>
+            <label className="mt-6 block">
+              <span className="text-sm font-bold text-gray-700">Nombre</span>
+              <input
+                name="name"
+                value={form.name}
+                onChange={updateField}
+                required
+                className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
+              />
+            </label>
+            <label className="mt-4 block">
+              <span className="text-sm font-bold text-gray-700">WhatsApp</span>
+              <input
+                name="phone"
+                value={form.phone}
+                onChange={updateField}
+                inputMode="tel"
+                className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
+              />
+            </label>
+          </>
+        ) : null}
+
+        <label className={`${mode === 'register' ? 'mt-4' : 'mt-6'} block`}>
           <span className="text-sm font-bold text-gray-700">Correo</span>
           <input
             name="email"
@@ -102,6 +161,7 @@ const LoginPage = () => {
             value={form.password}
             onChange={updateField}
             required
+            minLength={6}
             className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
           />
         </label>
@@ -114,7 +174,7 @@ const LoginPage = () => {
           className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-6 py-4 text-sm font-black text-white transition hover:bg-dark-blush disabled:cursor-wait disabled:opacity-70"
         >
           <UserIcon />
-          {loading ? 'Validando...' : 'Entrar'}
+          {loading ? 'Validando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
         </button>
       </form>
     </main>
