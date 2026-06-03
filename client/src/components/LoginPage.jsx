@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { UserRound } from 'lucide-react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -67,8 +68,8 @@ const LoginPage = () => {
   };
 
   return (
-    <main className="grid min-h-screen place-items-center bg-lavender px-6">
-      <form onSubmit={login} className="w-full max-w-md rounded-[1.75rem] bg-white p-8 shadow-2xl shadow-blush/20">
+    <main className="grid min-h-screen place-items-center bg-beige px-6">
+      <form onSubmit={login} className="w-full max-w-md rounded-[1.75rem] bg-cream p-8 shadow-2xl shadow-blush/20">
         <a href="/" className="text-sm font-black uppercase tracking-[0.18em] text-blush">SmileFlow</a>
         <h1 className="mt-2 text-3xl font-black text-gray-950">Acceso</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600">
@@ -83,7 +84,7 @@ const LoginPage = () => {
             value={form.email}
             onChange={updateField}
             required
-            className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
+            className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
           />
         </label>
 
@@ -95,7 +96,7 @@ const LoginPage = () => {
             value={form.password}
             onChange={updateField}
             required
-            className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
+            className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
           />
         </label>
 
@@ -104,8 +105,9 @@ const LoginPage = () => {
         <button
           type="submit"
           disabled={loading}
-          className="mt-6 w-full rounded-full bg-blush px-6 py-4 text-sm font-black text-white transition hover:bg-dark-blush disabled:cursor-wait disabled:opacity-70"
+          className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-6 py-4 text-sm font-black text-white transition hover:bg-dark-blush disabled:cursor-wait disabled:opacity-70"
         >
+          <UserRound className="h-5 w-5" aria-hidden="true" />
           {loading ? 'Validando...' : 'Entrar'}
         </button>
       </form>
