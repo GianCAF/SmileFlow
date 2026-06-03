@@ -27,8 +27,19 @@ function buildInitialAvailability() {
   }, {});
 }
 
+async function getUserRole(uid) {
+  const snapshot = await getDoc(doc(db, 'users', uid));
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return snapshot.data().role || null;
+}
+
 const DentistDashboard = () => {
   const [user, setUser] = useState(null);
+  const [role, setRole] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [availability, setAvailability] = useState(buildInitialAvailability);
@@ -38,18 +49,27 @@ const DentistDashboard = () => {
   useEffect(() => {
     return onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      setAuthReady(true);
+      setRole(null);
+      setStatus('');
 
       if (currentUser) {
         setLoading(true);
-        const entries = await Promise.all(days.map(async (day) => {
-          const snapshot = await getDoc(doc(db, 'clinicAvailability', day.key));
-          return [day.key, snapshot.exists() ? snapshot.data() : { ...defaultAvailability }];
-        }));
+        const currentRole = await getUserRole(currentUser.uid);
+        setRole(currentRole);
 
-        setAvailability(Object.fromEntries(entries));
+        if (currentRole === 'admin') {
+          const entries = await Promise.all(days.map(async (day) => {
+            const snapshot = await getDoc(doc(db, 'clinicAvailability', day.key));
+            return [day.key, snapshot.exists() ? snapshot.data() : { ...defaultAvailability }];
+          }));
+
+          setAvailability(Object.fromEntries(entries));
+        }
+
         setLoading(false);
       }
+
+      setAuthReady(true);
     });
   }, []);
 
@@ -89,6 +109,10 @@ const DentistDashboard = () => {
     setLoading(true);
 
     try {
+      if (role !== 'admin') {
+        throw new Error('Tu usuario no tiene permisos de administrador.');
+      }
+
       const dayAvailability = availability[day.key];
       await setDoc(doc(db, 'clinicAvailability', day.key), {
         dayKey: day.key,
@@ -148,6 +172,27 @@ const DentistDashboard = () => {
             Entrar
           </button>
         </form>
+      </main>
+    );
+  }
+
+  if (role !== 'admin') {
+    return (
+      <main className="grid min-h-screen place-items-center bg-lavender px-6">
+        <section className="w-full max-w-lg rounded-[1.75rem] bg-white p-8 text-center shadow-2xl shadow-blush/20">
+          <p className="text-sm font-black uppercase tracking-[0.18em] text-blush">SmileFlow</p>
+          <h1 className="mt-2 text-3xl font-black text-gray-950">Sin permisos de admin</h1>
+          <p className="mt-4 text-gray-600">
+            Este usuario existe, pero no tiene rol admin en Firestore. Crea o actualiza el documento users/{user.uid} con role admin.
+          </p>
+          <button
+            type="button"
+            onClick={() => signOut(auth)}
+            className="mt-6 rounded-full bg-blush px-6 py-3 text-sm font-black text-white transition hover:bg-dark-blush"
+          >
+            Salir
+          </button>
+        </section>
       </main>
     );
   }
