@@ -1,10 +1,20 @@
+import ClientPortal from './components/ClientPortal';
 import DentistDashboard from './components/DentistDashboard';
+import LoginPage from './components/LoginPage';
 import Services from './components/Services';
 import heroImage from './assets/hero.png';
 
 function App() {
   if (window.location.pathname.startsWith('/dashboard')) {
     return <DentistDashboard />;
+  }
+
+  if (window.location.pathname.startsWith('/login')) {
+    return <LoginPage />;
+  }
+
+  if (window.location.pathname.startsWith('/portal')) {
+    return <ClientPortal />;
   }
 
   return (
@@ -18,13 +28,13 @@ function App() {
             <a className="hover:text-blush" href="#servicios">Servicios</a>
             <a className="hover:text-blush" href="#agenda">Agenda</a>
             <a className="hover:text-blush" href="#contacto">Contacto</a>
-            <a className="hover:text-blush" href="/dashboard">Dashboard</a>
+            <a className="hover:text-blush" href="/login">Login</a>
           </div>
           <a
-            href="#servicios"
+            href="/login"
             className="rounded-full bg-blush px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blush/20 transition hover:bg-dark-blush"
           >
-            Agendar
+            Login
           </a>
         </nav>
       </header>
