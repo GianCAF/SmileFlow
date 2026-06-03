@@ -32,10 +32,13 @@ const rescheduleMessage = 'Para cambiar o cancelar una cita, enviame tu nombre c
 const handoffMessage = 'Claro, te comunico con la dentista. Puedes escribirnos por WhatsApp para atencion personalizada.';
 const fallbackMessage = 'No estoy seguro de que opcion necesitas. Escribe Hola o Menu para ver las opciones disponibles.';
 
-const ChatIcon = () => (
-  <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
-    <path d="M4 6.8C4 5.25 5.25 4 6.8 4h10.4C18.75 4 20 5.25 20 6.8v6.4c0 1.55-1.25 2.8-2.8 2.8H10l-4.4 3.2c-.66.48-1.6.01-1.6-.81V6.8Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-    <path d="M8 9h8M8 12h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+const RobotIcon = ({ className = 'h-5 w-5' }) => (
+  <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
+    <path d="M12 3v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M8 6h8a4 4 0 0 1 4 4v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5v-5a4 4 0 0 1 4-4Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <path d="M9 12h.01M15 12h.01" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    <path d="M9 16h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M3 11H1M23 11h-2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
@@ -61,19 +64,8 @@ function normalizeKeywordText(messageBody) {
 }
 
 function isGreetingOrInfoRequest(text) {
-  return [
-    'buenos dias',
-    'buen dia',
-    'buenas tardes',
-    'buenas noches',
-    'hola',
-    'podria',
-    'disculpe',
-    'oiga',
-    'menu',
-    'informacion',
-    'info',
-  ].some((trigger) => text.includes(trigger));
+  return ['buenos dias', 'buen dia', 'buenas tardes', 'buenas noches', 'hola', 'podria', 'disculpe', 'oiga', 'menu', 'informacion', 'info']
+    .some((trigger) => text.includes(trigger));
 }
 
 function getMenuOption(text) {
@@ -91,9 +83,7 @@ const WebChatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [flow, setFlow] = useState(null);
-  const [messages, setMessages] = useState([
-    { role: 'bot', text: menuMessage },
-  ]);
+  const [messages, setMessages] = useState([{ role: 'bot', text: menuMessage }]);
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
@@ -118,40 +108,18 @@ const WebChatbot = () => {
 
     const option = getMenuOption(normalized);
 
-    if (option === 'services') {
-      setFlow(null);
-      return servicesMessage;
-    }
-
-    if (option === 'prices') {
-      setFlow(null);
-      return pricesMessage;
-    }
+    if (option === 'services') return servicesMessage;
+    if (option === 'prices') return pricesMessage;
 
     if (option === 'booking') {
       setFlow('booking_date');
       return bookingPrompt;
     }
 
-    if (option === 'reminder') {
-      setFlow(null);
-      return reminderMessage;
-    }
-
-    if (option === 'reschedule') {
-      setFlow(null);
-      return rescheduleMessage;
-    }
-
-    if (option === 'handoff') {
-      setFlow(null);
-      return handoffMessage;
-    }
-
-    if (option === 'location') {
-      setFlow(null);
-      return 'Estamos en Av. Sonrisa 123. Puedes pedir una cita aqui mismo.';
-    }
+    if (option === 'reminder') return reminderMessage;
+    if (option === 'reschedule') return rescheduleMessage;
+    if (option === 'handoff') return handoffMessage;
+    if (option === 'location') return 'Estamos en Av. Sonrisa 123. Puedes pedir una cita aqui mismo.';
 
     return fallbackMessage;
   };
@@ -159,9 +127,7 @@ const WebChatbot = () => {
   const sendMessage = async (event) => {
     event.preventDefault();
 
-    if (!input.trim() || loading) {
-      return;
-    }
+    if (!input.trim() || loading) return;
 
     const userText = input.trim();
     setInput('');
@@ -174,7 +140,7 @@ const WebChatbot = () => {
     } catch {
       setMessages((current) => [...current, {
         role: 'bot',
-        text: 'No pude consultar disponibilidad. Revisa que las reglas de Firestore permitan lectura temporal de clinicAvailability y appointments.',
+        text: 'No pude consultar disponibilidad. Si Firestore pide login, activa Authentication > Sign-in method > Anonymous o publica las reglas temporales de lectura.',
       }]);
     } finally {
       setLoading(false);
@@ -184,16 +150,21 @@ const WebChatbot = () => {
   return (
     <div className="fixed bottom-5 right-5 z-50">
       {isOpen ? (
-        <section className="flex h-[560px] w-[min(92vw,390px)] flex-col overflow-hidden rounded-[1.5rem] border-2 border-dark-blush/20 bg-cream shadow-2xl shadow-dark-blush/25">
-          <header className="flex items-center justify-between border-b border-dark-blush/20 bg-blush px-4 py-3 text-white">
-            <div>
-              <p className="text-sm font-black">SmileFlow Chat</p>
-              <p className="text-xs font-semibold text-white/85">Disponibilidad y citas</p>
+        <section className="flex h-[560px] w-[min(92vw,390px)] flex-col overflow-hidden rounded-[1.5rem] border border-dark-blush/20 bg-cream shadow-2xl shadow-dark-blush/15">
+          <header className="flex items-center justify-between border-b border-dark-blush/10 bg-blush px-4 py-3 text-white">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-white text-dark-blush">
+                <RobotIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-black">SmileFlow Chat</p>
+                <p className="text-xs font-semibold text-white/85">Disponibilidad y citas</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="grid h-9 w-9 place-items-center rounded-full bg-dark-blush text-white transition hover:bg-white hover:text-dark-blush"
+              className="grid h-9 w-9 place-items-center rounded-full bg-white text-dark-blush transition hover:bg-soft-rose"
               aria-label="Cerrar chat"
             >
               <CloseIcon />
@@ -205,9 +176,7 @@ const WebChatbot = () => {
               <div
                 key={`${message.role}-${index}`}
                 className={`whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
-                  message.role === 'bot'
-                    ? 'mr-6 bg-white text-gray-800'
-                    : 'ml-6 bg-dark-blush text-white'
+                  message.role === 'bot' ? 'mr-6 bg-white text-gray-800' : 'ml-6 bg-dark-blush text-white'
                 }`}
               >
                 {message.text}
@@ -216,16 +185,16 @@ const WebChatbot = () => {
             {loading ? <div className="mr-6 rounded-2xl bg-white px-4 py-3 text-sm text-gray-600">Consultando...</div> : null}
           </div>
 
-          <form onSubmit={sendMessage} className="flex gap-2 border-t border-dark-blush/20 bg-cream p-3">
+          <form onSubmit={sendMessage} className="flex gap-2 border-t border-dark-blush/10 bg-cream p-3">
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Escribe tu mensaje"
-              className="min-w-0 flex-1 rounded-full border-2 border-beige bg-white px-4 py-3 text-sm outline-none focus:border-blush"
+              className="min-w-0 flex-1 rounded-full border border-beige bg-white px-4 py-3 text-sm outline-none focus:border-blush"
             />
             <button
               type="submit"
-              className="grid h-12 w-12 place-items-center rounded-full bg-dark-blush text-white shadow-lg shadow-dark-blush/25 transition hover:bg-blush"
+              className="grid h-12 w-12 place-items-center rounded-full bg-dark-blush text-white shadow-lg shadow-dark-blush/20 transition hover:bg-blush"
               aria-label="Enviar mensaje"
             >
               <SendIcon />
@@ -236,9 +205,9 @@ const WebChatbot = () => {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full bg-dark-blush px-5 py-4 text-sm font-black text-white shadow-2xl shadow-dark-blush/35 transition hover:bg-blush"
+          className="inline-flex items-center gap-2 rounded-full bg-dark-blush px-5 py-4 text-sm font-black text-white shadow-2xl shadow-dark-blush/20 transition hover:bg-blush"
         >
-          <ChatIcon />
+          <RobotIcon />
           Chat
         </button>
       )}
