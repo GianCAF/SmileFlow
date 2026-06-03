@@ -1,5 +1,4 @@
 const cron = require('node-cron');
-const { admin, db } = require('../config/firebase');
 
 function formatDate(date) {
   return new Intl.DateTimeFormat('es-MX', {
@@ -9,6 +8,7 @@ function formatDate(date) {
 }
 
 async function sendPendingReminders(sendWhatsAppMessage) {
+  const { admin, db } = require('../config/firebase');
   const now = new Date();
   const start = new Date(now);
   start.setDate(start.getDate() + 1);
