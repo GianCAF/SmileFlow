@@ -14,7 +14,7 @@ const Services = () => {
   const [selectedService, setSelectedService] = useState(null);
 
   return (
-    <section id="servicios" className="min-h-[700px] bg-white py-20">
+    <section id="servicios" className="min-h-[700px] bg-cream py-20">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold text-gray-900">Servicios Premium</h2>
         <p className="mt-32 font-medium text-blush">Especialidades disenadas para tu bienestar</p>
@@ -57,18 +57,18 @@ const Services = () => {
                   originY: 1.4,
                   pointerEvents: isBlocked ? 'none' : 'auto',
                 }}
-                className={`absolute flex h-[21.25rem] w-64 cursor-pointer flex-col justify-between rounded-[2rem] border-2 border-blush/30 bg-lavender p-8 shadow-2xl transition-all duration-300 group ${
+                className={`absolute flex h-[21.25rem] w-64 cursor-pointer flex-col justify-between rounded-[2rem] border-2 border-blush/25 bg-soft-rose p-8 shadow-2xl shadow-blush/10 transition-all duration-300 group ${
                   isBlocked ? 'opacity-50 blur-[2px]' : 'opacity-100'
                 }`}
               >
                 <div className="flex flex-col gap-4">
                   <span className="text-5xl font-black text-blush">{service.icon}</span>
-                  <h3 className="text-2xl font-extrabold leading-none text-gray-800 group-hover:text-blush">
+                  <h3 className="text-2xl font-extrabold leading-none text-gray-800 group-hover:text-dark-blush">
                     {service.title}
                   </h3>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-medium leading-relaxed text-gray-500">{service.desc}</p>
+                  <p className="text-sm font-medium leading-relaxed text-gray-600">{service.desc}</p>
                   <div className="mt-4 font-bold text-blush opacity-0 transition-opacity group-hover:opacity-100">
                     Agendar
                   </div>
