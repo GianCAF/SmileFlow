@@ -1,10 +1,16 @@
-import { UserRound } from 'lucide-react';
 import ClientPortal from './components/ClientPortal';
 import DentistDashboard from './components/DentistDashboard';
 import LoginPage from './components/LoginPage';
 import Services from './components/Services';
 import WebChatbot from './components/WebChatbot';
 import heroImage from './assets/hero.png';
+
+const UserIcon = () => (
+  <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" stroke="currentColor" strokeWidth="2" />
+    <path d="M4.5 20c1.2-4 4-6 7.5-6s6.3 2 7.5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
 
 function App() {
   if (window.location.pathname.startsWith('/dashboard')) {
@@ -34,9 +40,9 @@ function App() {
           </div>
           <a
             href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-blush px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-blush/20 transition hover:bg-dark-blush"
+            className="inline-flex items-center gap-2 rounded-full bg-blush px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-dark-blush/20 transition hover:bg-dark-blush"
           >
-            <UserRound className="h-4 w-4" aria-hidden="true" />
+            <UserIcon />
             Login
           </a>
         </nav>
@@ -57,7 +63,7 @@ function App() {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#servicios"
-                className="rounded-full bg-blush px-7 py-4 text-center text-sm font-black text-white shadow-xl shadow-blush/25 transition hover:bg-dark-blush"
+                className="rounded-full bg-blush px-7 py-4 text-center text-sm font-black text-white shadow-xl shadow-dark-blush/20 transition hover:bg-dark-blush"
               >
                 Ver servicios
               </a>
@@ -74,7 +80,7 @@ function App() {
             <img
               src={heroImage}
               alt="Paciente sonriendo en consultorio dental"
-              className="relative h-[420px] w-full rounded-[2rem] object-cover shadow-2xl shadow-blush/20"
+              className="relative h-[420px] w-full rounded-[2rem] object-cover shadow-2xl shadow-dark-blush/20"
             />
           </div>
         </div>
@@ -92,7 +98,7 @@ function App() {
             </div>
             <a
               href="#servicios"
-              className="rounded-full bg-white px-6 py-3 text-sm font-black text-gray-950 shadow-lg shadow-blush/10 transition hover:bg-soft-rose"
+              className="rounded-full bg-white px-6 py-3 text-sm font-black text-gray-950 shadow-lg shadow-dark-blush/10 transition hover:bg-soft-rose"
             >
               Agendar ahora
             </a>
