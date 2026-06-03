@@ -8,7 +8,8 @@ export default {
         extend: {
             colors: {
                 'cream': '#FFF8F1',
-                'beige': '#F4E8DA',
+                'warm': '#F7E6D4',
+                'beige': '#ECD8C4',
                 'soft-rose': '#F8DDE5',
                 'lavender': '#FFE8EE',
                 'blush': '#D37E91',
