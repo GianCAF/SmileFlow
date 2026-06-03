@@ -1,6 +1,7 @@
 const qrImage = require('qrcode');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const { buildAvailabilityReplyForMessage } = require('./availability');
 const { toWhatsAppId } = require('../utils/phone');
 
 let client;
@@ -34,16 +35,7 @@ const serviceListMessage = [
   'Responde 2 para ver precios o 3 para agendar una cita.',
 ].join('\n');
 
-const bookingMessage = [
-  'Con gusto te ayudo a agendar.',
-  '',
-  'Por favor envia:',
-  'Nombre completo',
-  'Servicio que deseas',
-  'Dia y horario ideal',
-  '',
-  'La dentista confirmara disponibilidad por este medio.',
-].join('\n');
+const bookingDatePrompt = 'Dime que dia quieres agendar en numero y mes por favor. Ejemplo: 15 junio o 15/06.';
 
 const reminderMessage = [
   'Para recordar tu fecha de cita, enviame tu nombre completo y telefono registrado.',
@@ -77,7 +69,7 @@ function normalizeKeywordText(messageBody) {
 
 function getChatState(chatId) {
   if (!conversationState.has(chatId)) {
-    conversationState.set(chatId, { paused: false });
+    conversationState.set(chatId, { paused: false, flow: null });
   }
 
   return conversationState.get(chatId);
@@ -110,10 +102,6 @@ function getMenuOption(text) {
     return 'prices';
   }
 
-  if (text === '3' || text.includes('agendar') || text.includes('cita')) {
-    return 'booking';
-  }
-
   if (text === '4' || text.includes('recordar') || text.includes('fecha')) {
     return 'reminder';
   }
@@ -128,6 +116,10 @@ function getMenuOption(text) {
     return 'reschedule';
   }
 
+  if (text === '3' || text.includes('agendar') || text.includes('cita')) {
+    return 'booking';
+  }
+
   if (text === '6' || text.includes('dentista') || text.includes('doctor') || text.includes('humano')) {
     return 'handoff';
   }
@@ -139,51 +131,71 @@ function getMenuOption(text) {
   return null;
 }
 
-function buildAutoReply(messageBody, chatId) {
+async function buildAutoReply(messageBody, chatId) {
   const text = normalizeKeywordText(messageBody);
   const state = getChatState(chatId);
 
   if (state.paused) {
     if (text.includes('activar bot') || text === 'bot' || text === 'menu') {
       state.paused = false;
+      state.flow = null;
       return menuMessage;
     }
 
     return null;
   }
 
+  if (state.flow === 'booking_date') {
+    try {
+      const reply = await buildAvailabilityReplyForMessage(messageBody);
+      state.flow = 'booking_time';
+      return reply;
+    } catch (error) {
+      console.error('[whatsapp] Error consultando disponibilidad:', error.message);
+      return 'Aun no puedo consultar la agenda. Revisa la conexion de Firebase Admin en el servidor.';
+    }
+  }
+
   if (isGreetingOrInfoRequest(text)) {
+    state.flow = null;
     return menuMessage;
   }
 
   const option = getMenuOption(text);
 
   if (option === 'services') {
+    state.flow = null;
     return serviceListMessage;
   }
 
   if (option === 'prices') {
+    state.flow = null;
     return process.env.CLINIC_PRICES_MESSAGE || 'Con gusto te compartimos precios. Limpieza desde $700 MXN y valoracion inicial con agenda previa.';
   }
 
   if (option === 'booking') {
-    return bookingMessage;
+    state.flow = 'booking_date';
+    return bookingDatePrompt;
   }
 
   if (option === 'reminder') {
+    state.flow = null;
     return reminderMessage;
   }
 
   if (option === 'reschedule') {
+    state.flow = null;
     return rescheduleMessage;
   }
 
   if (option === 'handoff') {
     state.paused = true;
+    state.flow = null;
     return dentistHandoffMessage;
   }
 
   if (option === 'location') {
+    state.flow = null;
     return process.env.CLINIC_LOCATION_MESSAGE || 'Estamos en Av. Sonrisa 123. Puedes pedir una cita aqui mismo.';
   }
 
@@ -258,7 +270,7 @@ function initializeWhatsApp() {
       body: message.body,
     });
 
-    const reply = buildAutoReply(message.body || '', message.from);
+    const reply = await buildAutoReply(message.body || '', message.from);
 
     if (reply) {
       await message.reply(reply);
