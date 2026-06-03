@@ -1,6 +1,5 @@
-import { signInAnonymously } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const monthMap = {
   enero: 0,
@@ -19,18 +18,6 @@ const monthMap = {
 };
 
 const dayNames = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-
-async function ensureReadableSession() {
-  if (auth.currentUser) {
-    return;
-  }
-
-  try {
-    await signInAnonymously(auth);
-  } catch {
-    // Public Firestore rules may still allow reads during development.
-  }
-}
 
 function normalizeText(value) {
   return String(value || '')
@@ -124,8 +111,6 @@ function buildTimeSlots(startTime, endTime, slotMinutes) {
 }
 
 async function getAvailabilityForDate(date) {
-  await ensureReadableSession();
-
   const dayKey = String(date.getDay());
   const dateId = toDateId(date);
   const availabilitySnapshot = await getDoc(doc(db, 'clinicAvailability', dayKey));
@@ -142,15 +127,6 @@ async function getAvailabilityForDate(date) {
   const availability = availabilitySnapshot.data();
   const slotMinutes = Number(availability.slotMinutes || 60);
   const slots = buildTimeSlots(availability.startTime, availability.endTime, slotMinutes);
-  const appointmentSnapshot = await getDocs(query(
-    collection(db, 'appointments'),
-    where('date', '==', dateId),
-  ));
-  const booked = appointmentSnapshot.docs
-    .map((appointmentDoc) => appointmentDoc.data().time)
-    .filter(Boolean);
-  const bookedSet = new Set(booked);
-  const availableSlots = slots.filter((slot) => !bookedSet.has(slot));
 
   return {
     dateId,
@@ -159,8 +135,6 @@ async function getAvailabilityForDate(date) {
     startTime: availability.startTime,
     endTime: availability.endTime,
     slots,
-    booked,
-    availableSlots,
   };
 }
 
@@ -171,29 +145,11 @@ function buildAvailabilityReply(result) {
 
   const range = `${toDisplayTime(result.startTime)} a ${toDisplayTime(result.endTime)}`;
 
-  if (!result.booked.length) {
-    return [
-      `Para el ${result.dateId} tenemos horario de ${range}.`,
-      'Aun no hay citas agendadas ese dia.',
-      '',
-      `Horarios disponibles: ${result.availableSlots.map(toDisplayTime).join(', ')}.`,
-      'Responde con el horario que prefieras.',
-    ].join('\n');
-  }
-
-  if (!result.availableSlots.length) {
-    return [
-      `Para el ${result.dateId} atendemos de ${range}, pero ese dia ya esta lleno.`,
-      `Horarios ocupados: ${result.booked.map(toDisplayTime).join(', ')}.`,
-      'Puedes indicarme otra fecha?',
-    ].join('\n');
-  }
-
   return [
-    `Para el ${result.dateId} tenemos horario de ${range} excepto a las ${result.booked.map(toDisplayTime).join(', ')}.`,
+    `Para el ${result.dateId} tenemos horario de ${range}.`,
     '',
-    `Horarios disponibles: ${result.availableSlots.map(toDisplayTime).join(', ')}.`,
-    'Responde con el horario que prefieras.',
+    `Horarios base: ${result.slots.map(toDisplayTime).join(', ')}.`,
+    'La dentista confirmara si el espacio sigue disponible antes de cerrar la cita.',
   ].join('\n');
 }
 
