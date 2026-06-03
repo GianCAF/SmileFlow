@@ -14,6 +14,11 @@ dist-ssr
 *.env
 .env
 
+# WhatsApp Web local auth/session data
+session/
+.wwebjs_auth/
+.wwebjs_cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
