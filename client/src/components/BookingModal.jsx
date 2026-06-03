@@ -66,13 +66,13 @@ const BookingModal = ({ isOpen, service, onClose }) => {
     <AnimatePresence>
       {isOpen && service ? (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/55 px-4 py-8 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4 py-8 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="w-full max-w-lg rounded-[1.75rem] bg-white p-6 text-left shadow-2xl"
+            className="w-full max-w-lg rounded-[1.75rem] bg-cream p-6 text-left shadow-2xl shadow-blush/20"
             initial={{ y: 28, scale: 0.96, opacity: 0 }}
             animate={{ y: 0, scale: 1, opacity: 1 }}
             exit={{ y: 18, scale: 0.98, opacity: 0 }}
@@ -86,7 +86,7 @@ const BookingModal = ({ isOpen, service, onClose }) => {
               <button
                 type="button"
                 onClick={resetAndClose}
-                className="grid h-10 w-10 place-items-center rounded-full border border-gray-200 text-xl font-bold text-gray-500 transition hover:border-blush hover:text-blush"
+                className="grid h-10 w-10 place-items-center rounded-full border border-beige bg-white text-xl font-bold text-gray-500 transition hover:border-blush hover:text-blush"
                 aria-label="Cerrar modal"
               >
                 x
@@ -102,7 +102,7 @@ const BookingModal = ({ isOpen, service, onClose }) => {
                   onChange={updateField}
                   required
                   minLength={2}
-                  className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
+                  className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
                   placeholder="Ej. Ana Martinez"
                 />
               </label>
@@ -115,7 +115,7 @@ const BookingModal = ({ isOpen, service, onClose }) => {
                   onChange={updateField}
                   required
                   inputMode="tel"
-                  className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
+                  className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
                   placeholder="Ej. 5512345678"
                 />
               </label>
@@ -130,7 +130,7 @@ const BookingModal = ({ isOpen, service, onClose }) => {
                     onChange={updateField}
                     min={minDate}
                     required
-                    className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
+                    className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
                   />
                 </label>
 
@@ -141,7 +141,7 @@ const BookingModal = ({ isOpen, service, onClose }) => {
                     value={form.time}
                     onChange={updateField}
                     required
-                    className="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
+                    className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none transition focus:border-blush focus:ring-4 focus:ring-blush/10"
                   >
                     <option value="">Selecciona</option>
                     {timeSlots.map((slot) => (
