@@ -140,7 +140,7 @@ const WebChatbot = () => {
     } catch {
       setMessages((current) => [...current, {
         role: 'bot',
-        text: 'No pude consultar disponibilidad. Si Firestore pide login, activa Authentication > Sign-in method > Anonymous o publica las reglas temporales de lectura.',
+        text: 'No pude consultar los horarios. Verifica que clinicAvailability tenga lectura publica temporal en Firestore.',
       }]);
     } finally {
       setLoading(false);
