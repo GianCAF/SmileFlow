@@ -8,6 +8,65 @@ let isReady = false;
 let isInitializing = false;
 let latestQr = null;
 
+const conversationState = new Map();
+
+const menuMessage = [
+  'Hola!, un placer saludarte, que te gustaria realizar:',
+  '',
+  '1- Servicios que manejamos',
+  '2- Precio de cada servicio',
+  '3- Agendar cita',
+  '4- Recordar fecha de cita',
+  '5- Cambiar o cancelar cita',
+  '6- Hablar con la dentista',
+  '',
+  'Puedes responder con el numero de la opcion.',
+].join('\n');
+
+const serviceListMessage = [
+  'Estos son los servicios que manejamos:',
+  '',
+  '1. Limpieza Pro',
+  '2. Ortodoncia',
+  '3. Implantes',
+  '4. Blanqueamiento',
+  '',
+  'Responde 2 para ver precios o 3 para agendar una cita.',
+].join('\n');
+
+const bookingMessage = [
+  'Con gusto te ayudo a agendar.',
+  '',
+  'Por favor envia:',
+  'Nombre completo',
+  'Servicio que deseas',
+  'Dia y horario ideal',
+  '',
+  'La dentista confirmara disponibilidad por este medio.',
+].join('\n');
+
+const reminderMessage = [
+  'Para recordar tu fecha de cita, enviame tu nombre completo y telefono registrado.',
+  'Revisaremos tu cita y te confirmaremos por WhatsApp.',
+].join('\n');
+
+const rescheduleMessage = [
+  'Para cambiar o cancelar una cita, enviame tu nombre completo, fecha actual de la cita y el nuevo horario deseado.',
+  'La dentista revisara disponibilidad y te respondera por este medio.',
+].join('\n');
+
+const dentistHandoffMessage = [
+  'Claro, te comunico con la dentista.',
+  'El chatbot dejara de responder en esta conversacion para que pueda atenderte personalmente.',
+  '',
+  'Para reactivar el chatbot escribe: activar bot',
+].join('\n');
+
+const fallbackMessage = [
+  'No estoy seguro de que opcion necesitas.',
+  'Escribe Hola o Menu para ver las opciones disponibles.',
+].join('\n');
+
 function normalizeKeywordText(messageBody) {
   return messageBody
     .trim()
@@ -16,18 +75,119 @@ function normalizeKeywordText(messageBody) {
     .replace(/[\u0300-\u036f]/g, '');
 }
 
-function buildAutoReply(messageBody) {
-  const text = normalizeKeywordText(messageBody);
-
-  if (text.includes('ubicacion')) {
-    return process.env.CLINIC_LOCATION_MESSAGE || 'Estamos en Av. Sonrisa 123. Puedes pedir una cita aqui mismo.';
+function getChatState(chatId) {
+  if (!conversationState.has(chatId)) {
+    conversationState.set(chatId, { paused: false });
   }
 
-  if (text.includes('precio') || text.includes('precios')) {
-    return process.env.CLINIC_PRICES_MESSAGE || 'Con gusto te compartimos precios. Limpieza desde $700 MXN y valoracion inicial con agenda previa.';
+  return conversationState.get(chatId);
+}
+
+function isGreetingOrInfoRequest(text) {
+  const triggers = [
+    'buenos dias',
+    'buen dia',
+    'buenas tardes',
+    'buenas noches',
+    'hola',
+    'podria',
+    'disculpe',
+    'oiga',
+    'menu',
+    'informacion',
+    'info',
+  ];
+
+  return triggers.some((trigger) => text.includes(trigger));
+}
+
+function getMenuOption(text) {
+  if (text === '1' || text.includes('servicio')) {
+    return 'services';
+  }
+
+  if (text === '2' || text.includes('precio') || text.includes('costo')) {
+    return 'prices';
+  }
+
+  if (text === '3' || text.includes('agendar') || text.includes('cita')) {
+    return 'booking';
+  }
+
+  if (text === '4' || text.includes('recordar') || text.includes('fecha')) {
+    return 'reminder';
+  }
+
+  if (
+    text === '5'
+    || text.includes('cambiar')
+    || text.includes('cancelar')
+    || text.includes('concelar')
+    || text.includes('reagendar')
+  ) {
+    return 'reschedule';
+  }
+
+  if (text === '6' || text.includes('dentista') || text.includes('doctor') || text.includes('humano')) {
+    return 'handoff';
+  }
+
+  if (text.includes('ubicacion')) {
+    return 'location';
   }
 
   return null;
+}
+
+function buildAutoReply(messageBody, chatId) {
+  const text = normalizeKeywordText(messageBody);
+  const state = getChatState(chatId);
+
+  if (state.paused) {
+    if (text.includes('activar bot') || text === 'bot' || text === 'menu') {
+      state.paused = false;
+      return menuMessage;
+    }
+
+    return null;
+  }
+
+  if (isGreetingOrInfoRequest(text)) {
+    return menuMessage;
+  }
+
+  const option = getMenuOption(text);
+
+  if (option === 'services') {
+    return serviceListMessage;
+  }
+
+  if (option === 'prices') {
+    return process.env.CLINIC_PRICES_MESSAGE || 'Con gusto te compartimos precios. Limpieza desde $700 MXN y valoracion inicial con agenda previa.';
+  }
+
+  if (option === 'booking') {
+    return bookingMessage;
+  }
+
+  if (option === 'reminder') {
+    return reminderMessage;
+  }
+
+  if (option === 'reschedule') {
+    return rescheduleMessage;
+  }
+
+  if (option === 'handoff') {
+    state.paused = true;
+    return dentistHandoffMessage;
+  }
+
+  if (option === 'location') {
+    return process.env.CLINIC_LOCATION_MESSAGE || 'Estamos en Av. Sonrisa 123. Puedes pedir una cita aqui mismo.';
+  }
+
+  return fallbackMessage;
 }
 
 function initializeWhatsApp() {
@@ -98,11 +258,13 @@ function initializeWhatsApp() {
       body: message.body,
     });
 
-    const reply = buildAutoReply(message.body || '');
+    const reply = buildAutoReply(message.body || '', message.from);
 
     if (reply) {
       await message.reply(reply);
       console.log('[whatsapp] Respuesta automatica enviada:', reply);
+    } else {
+      console.log('[whatsapp] Chat pausado o sin respuesta automatica:', message.from);
     }
   });
 
