@@ -1,5 +1,4 @@
 const express = require('express');
-const { admin, db } = require('../config/firebase');
 const { normalizePhone } = require('../utils/phone');
 
 function createBookingRouter({ sendWhatsAppMessage }) {
@@ -7,6 +6,7 @@ function createBookingRouter({ sendWhatsAppMessage }) {
 
   router.post('/booking', async (req, res) => {
     try {
+      const { admin, db } = require('../config/firebase');
       const { name, phone, date, time, serviceId, serviceTitle } = req.body;
 
       if (!name || !phone || !date || !time || !serviceTitle) {
