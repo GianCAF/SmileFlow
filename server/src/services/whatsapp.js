@@ -8,10 +8,18 @@ let isReady = false;
 let isInitializing = false;
 let latestQr = null;
 
-function buildAutoReply(messageBody) {
-  const text = messageBody.trim().toLowerCase();
+function normalizeKeywordText(messageBody) {
+  return messageBody
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
 
-  if (text.includes('ubicacion') || text.includes('ubicación')) {
+function buildAutoReply(messageBody) {
+  const text = normalizeKeywordText(messageBody);
+
+  if (text.includes('ubicacion')) {
     return process.env.CLINIC_LOCATION_MESSAGE || 'Estamos en Av. Sonrisa 123. Puedes pedir una cita aqui mismo.';
   }
 
@@ -85,10 +93,16 @@ function initializeWhatsApp() {
   });
 
   client.on('message', async (message) => {
+    console.log('[whatsapp] Mensaje recibido:', {
+      from: message.from,
+      body: message.body,
+    });
+
     const reply = buildAutoReply(message.body || '');
 
     if (reply) {
       await message.reply(reply);
+      console.log('[whatsapp] Respuesta automatica enviada:', reply);
     }
   });
 
