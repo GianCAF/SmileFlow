@@ -1,7 +1,12 @@
+import DentistDashboard from './components/DentistDashboard';
 import Services from './components/Services';
 import heroImage from './assets/hero.png';
 
 function App() {
+  if (window.location.pathname.startsWith('/dashboard')) {
+    return <DentistDashboard />;
+  }
+
   return (
     <div className="min-h-screen bg-white text-gray-950 selection:bg-blush/20">
       <header className="sticky top-0 z-40 border-b border-blush/10 bg-white/90 backdrop-blur">
@@ -13,6 +18,7 @@ function App() {
             <a className="hover:text-blush" href="#servicios">Servicios</a>
             <a className="hover:text-blush" href="#agenda">Agenda</a>
             <a className="hover:text-blush" href="#contacto">Contacto</a>
+            <a className="hover:text-blush" href="/dashboard">Dashboard</a>
           </div>
           <a
             href="#servicios"
