@@ -1,8 +1,15 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+@theme {
+  --color-cream: #fff7ea;
+  --color-warm: #ffd9bc;
+  --color-beige: #f1cbae;
+  --color-soft-rose: #ffd1dc;
+  --color-lavender: #ffe6ec;
+  --color-blush: #ff6f91;
+  --color-dark-blush: #b83b5e;
+}
 
 body {
-  @apply bg-white text-gray-900;
+  @apply bg-cream text-gray-900;
 }
