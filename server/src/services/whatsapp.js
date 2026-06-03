@@ -4,6 +4,7 @@ const { toWhatsAppId } = require('../utils/phone');
 
 let client;
 let isReady = false;
+let isInitializing = false;
 
 function buildAutoReply(messageBody) {
   const text = messageBody.trim().toLowerCase();
@@ -25,6 +26,11 @@ function initializeWhatsApp() {
     return null;
   }
 
+  if (client || isInitializing) {
+    return client;
+  }
+
+  isInitializing = true;
   client = new Client({
     authStrategy: new LocalAuth({
       dataPath: process.env.WHATSAPP_SESSION_PATH || './session',
@@ -42,11 +48,24 @@ function initializeWhatsApp() {
 
   client.on('ready', () => {
     isReady = true;
+    isInitializing = false;
     console.log('[whatsapp] Sesion lista');
+  });
+
+  client.on('authenticated', () => {
+    console.log('[whatsapp] Autenticacion recibida');
+  });
+
+  client.on('auth_failure', (message) => {
+    isReady = false;
+    isInitializing = false;
+    console.error('[whatsapp] Fallo de autenticacion:', message);
   });
 
   client.on('disconnected', (reason) => {
     isReady = false;
+    isInitializing = false;
+    client = null;
     console.log('[whatsapp] Sesion desconectada:', reason);
   });
 
@@ -58,8 +77,31 @@ function initializeWhatsApp() {
     }
   });
 
-  client.initialize();
+  client.initialize().catch((error) => {
+    isReady = false;
+    isInitializing = false;
+    client = null;
+    console.error('[whatsapp] Error iniciando cliente:', error.message);
+  });
+
   return client;
+}
+
+async function shutdownWhatsApp() {
+  if (!client) {
+    return;
+  }
+
+  try {
+    await client.destroy();
+    console.log('[whatsapp] Cliente cerrado');
+  } catch (error) {
+    console.error('[whatsapp] Error cerrando cliente:', error.message);
+  } finally {
+    client = null;
+    isReady = false;
+    isInitializing = false;
+  }
 }
 
 async function sendWhatsAppMessage(phone, body) {
@@ -82,6 +124,7 @@ function getWhatsAppStatus() {
   return {
     enabled: process.env.WHATSAPP_ENABLED !== 'false',
     ready: isReady,
+    initializing: isInitializing,
   };
 }
 
@@ -89,4 +132,5 @@ module.exports = {
   getWhatsAppStatus,
   initializeWhatsApp,
   sendWhatsAppMessage,
+  shutdownWhatsApp,
 };
