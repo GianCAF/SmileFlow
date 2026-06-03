@@ -4,7 +4,12 @@ const express = require('express');
 const cors = require('cors');
 const createBookingRouter = require('./routes/bookings');
 const createWhatsAppTestRouter = require('./routes/whatsappTest');
-const { getWhatsAppStatus, initializeWhatsApp, sendWhatsAppMessage } = require('./services/whatsapp');
+const {
+  getWhatsAppStatus,
+  initializeWhatsApp,
+  sendWhatsAppMessage,
+  shutdownWhatsApp,
+} = require('./services/whatsapp');
 const { startReminderJob } = require('./jobs/reminders');
 
 const app = express();
@@ -24,8 +29,19 @@ app.get('/api/health', (_req, res) => {
 app.use('/api', createWhatsAppTestRouter({ sendWhatsAppMessage }));
 app.use('/api', createBookingRouter({ sendWhatsAppMessage }));
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`[api] SmileFlow escuchando en http://localhost:${port}`);
   initializeWhatsApp();
   startReminderJob(sendWhatsAppMessage);
 });
+
+async function shutdown(signal) {
+  console.log(`[api] Cerrando servidor por ${signal}`);
+  server.close(async () => {
+    await shutdownWhatsApp();
+    process.exit(0);
+  });
+}
+
+process.once('SIGINT', () => shutdown('SIGINT'));
+process.once('SIGTERM', () => shutdown('SIGTERM'));
