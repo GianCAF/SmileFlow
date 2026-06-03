@@ -1,0 +1,11 @@
+{
+  "watch": ["src"],
+  "ext": "js,json",
+  "ignore": [
+    "session/**",
+    ".wwebjs_auth/**",
+    ".wwebjs_cache/**",
+    "node_modules/**"
+  ],
+  "signal": "SIGTERM"
+}
