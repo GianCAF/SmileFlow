@@ -10,6 +10,12 @@ const UserIcon = () => (
   </svg>
 );
 
+const CloseIcon = () => (
+  <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+    <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+  </svg>
+);
+
 async function getProfile(user) {
   const snapshot = await getDoc(doc(db, 'users', user.uid));
 
@@ -90,7 +96,14 @@ const LoginPage = () => {
 
   return (
     <main className="grid min-h-screen place-items-center bg-warm px-6">
-      <form onSubmit={submit} className="w-full max-w-md rounded-[1.75rem] bg-cream p-8 shadow-2xl shadow-dark-blush/10">
+      <form onSubmit={submit} className="relative w-full max-w-md rounded-[1.75rem] bg-cream p-8 shadow-2xl shadow-dark-blush/10">
+        <a
+          href="/"
+          aria-label="Volver al inicio"
+          className="absolute right-5 top-5 grid h-10 w-10 place-items-center rounded-full bg-white text-dark-blush shadow-sm shadow-dark-blush/10 transition hover:bg-soft-rose"
+        >
+          <CloseIcon />
+        </a>
         <a href="/" className="text-sm font-black uppercase tracking-[0.18em] text-blush">SmileFlow</a>
         <h1 className="mt-2 text-3xl font-black text-gray-950">{mode === 'login' ? 'Acceso' : 'Registro cliente'}</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600">
