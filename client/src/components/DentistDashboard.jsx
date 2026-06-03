@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, authPersistenceReady, db } from '../firebase';
 
 const days = [
   { key: '0', name: 'Domingo' },
@@ -100,6 +100,7 @@ const DentistDashboard = () => {
     setLoading(true);
 
     try {
+      await authPersistenceReady;
       await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
     } catch (error) {
       setStatus(error.message);

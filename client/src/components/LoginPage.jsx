@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, authPersistenceReady, db } from '../firebase';
 
 const UserIcon = () => (
   <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -69,6 +69,8 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
+      await authPersistenceReady;
+
       if (mode === 'register') {
         const credential = await createUserWithEmailAndPassword(auth, form.email, form.password);
 
