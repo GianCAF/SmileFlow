@@ -48,12 +48,13 @@ Citas creadas por landing, dashboard o chatbot.
   "name": "Ana Martinez",
   "phone": "525512345678",
   "patientUid": "firebase-auth-uid-or-null",
-  "serviceTitle": "Limpieza Pro",
+  "serviceTitle": "Consulta dental",
   "date": "2026-06-15",
   "time": "11:00",
   "startsAt": "timestamp",
-  "status": "pending",
+  "status": "confirmed",
   "reminded": false,
+  "source": "web-chatbot",
   "createdAt": "serverTimestamp"
 }
 ```
