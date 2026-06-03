@@ -1,3 +1,4 @@
+const qrImage = require('qrcode');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const { toWhatsAppId } = require('../utils/phone');
@@ -5,6 +6,7 @@ const { toWhatsAppId } = require('../utils/phone');
 let client;
 let isReady = false;
 let isInitializing = false;
+let latestQr = null;
 
 function buildAutoReply(messageBody) {
   const text = messageBody.trim().toLowerCase();
@@ -41,18 +43,31 @@ function initializeWhatsApp() {
     },
   });
 
-  client.on('qr', (qr) => {
-    console.log('[whatsapp] Escanea este QR con el telefono del consultorio:');
-    qrcode.generate(qr, { small: true });
+  client.on('qr', async (qr) => {
+    latestQr = {
+      raw: qr,
+      dataUrl: await qrImage.toDataURL(qr, {
+        errorCorrectionLevel: 'M',
+        margin: 3,
+        scale: 8,
+      }),
+      generatedAt: new Date().toISOString(),
+    };
+
+    console.log('[whatsapp] QR listo en http://localhost:4000/api/whatsapp/qr');
+    console.log('[whatsapp] Tambien puedes intentar escanear este QR de terminal:');
+    qrcode.generate(qr, { small: false });
   });
 
   client.on('ready', () => {
     isReady = true;
     isInitializing = false;
+    latestQr = null;
     console.log('[whatsapp] Sesion lista');
   });
 
   client.on('authenticated', () => {
+    latestQr = null;
     console.log('[whatsapp] Autenticacion recibida');
   });
 
@@ -101,6 +116,7 @@ async function shutdownWhatsApp() {
     client = null;
     isReady = false;
     isInitializing = false;
+    latestQr = null;
   }
 }
 
@@ -120,15 +136,21 @@ async function sendWhatsAppMessage(phone, body) {
   return { sent: true };
 }
 
+function getWhatsAppQr() {
+  return latestQr;
+}
+
 function getWhatsAppStatus() {
   return {
     enabled: process.env.WHATSAPP_ENABLED !== 'false',
     ready: isReady,
     initializing: isInitializing,
+    hasQr: Boolean(latestQr),
   };
 }
 
 module.exports = {
+  getWhatsAppQr,
   getWhatsAppStatus,
   initializeWhatsApp,
   sendWhatsAppMessage,
