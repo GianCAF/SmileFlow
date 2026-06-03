@@ -265,6 +265,17 @@ function initializeWhatsApp() {
   });
 
   client.on('message', async (message) => {
+    const chat = await message.getChat();
+
+    if (message.from.endsWith('@g.us') || chat.isGroup) {
+      console.log('[whatsapp] Mensaje de grupo ignorado:', {
+        from: message.from,
+        name: chat.name,
+        body: message.body,
+      });
+      return;
+    }
+
     console.log('[whatsapp] Mensaje recibido:', {
       from: message.from,
       body: message.body,
