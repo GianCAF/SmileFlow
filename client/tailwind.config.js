@@ -7,13 +7,13 @@ export default {
     theme: {
         extend: {
             colors: {
-                'cream': '#FFF7EA',
-                'warm': '#FFD9BC',
-                'beige': '#F1CBAE',
-                'soft-rose': '#FFD1DC',
-                'lavender': '#FFE6EC',
-                'blush': '#FF6F91',
-                'dark-blush': '#B83B5E',
+                'cream': '#FFFAF4',
+                'warm': '#F8EADC',
+                'beige': '#EAD7C5',
+                'soft-rose': '#F7D6DF',
+                'lavender': '#FCE8EE',
+                'blush': '#EAA0B3',
+                'dark-blush': '#B96A80',
             },
         },
     },
