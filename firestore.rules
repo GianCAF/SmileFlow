@@ -2,6 +2,10 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function devAccessOpen() {
+      return request.time < timestamp.date(2026, 7, 3);
+    }
+
     function signedIn() {
       return request.auth != null;
     }
@@ -21,22 +25,22 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAdmin() || isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role);
-      allow delete: if isAdmin();
+      allow read: if devAccessOpen() && (isAdmin() || isOwner(userId));
+      allow create: if devAccessOpen() && isOwner(userId);
+      allow update: if devAccessOpen() && (isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role));
+      allow delete: if devAccessOpen() && isAdmin();
     }
 
     match /clinicAvailability/{dayKey} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read: if devAccessOpen();
+      allow write: if devAccessOpen() && isAdmin();
     }
 
     match /appointments/{appointmentId} {
-      allow read: if isAdmin() || (signedIn() && resource.data.patientUid == request.auth.uid);
-      allow create: if true;
-      allow update: if isAdmin() || (signedIn() && resource.data.patientUid == request.auth.uid);
-      allow delete: if isAdmin();
+      allow read: if devAccessOpen() && (isAdmin() || (signedIn() && resource.data.patientUid == request.auth.uid));
+      allow create: if devAccessOpen();
+      allow update: if devAccessOpen() && (isAdmin() || (signedIn() && resource.data.patientUid == request.auth.uid));
+      allow delete: if devAccessOpen() && isAdmin();
     }
   }
 }
