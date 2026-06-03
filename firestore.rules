@@ -37,7 +37,7 @@ service cloud.firestore {
     }
 
     match /appointments/{appointmentId} {
-      allow read: if devAccessOpen();
+      allow read: if devAccessOpen() && (isAdmin() || (signedIn() && resource.data.patientUid == request.auth.uid));
       allow create: if devAccessOpen();
       allow update: if devAccessOpen() && (isAdmin() || (signedIn() && resource.data.patientUid == request.auth.uid));
       allow delete: if devAccessOpen() && isAdmin();
