@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const createBookingRouter = require('./routes/bookings');
+const createWhatsAppTestRouter = require('./routes/whatsappTest');
 const { getWhatsAppStatus, initializeWhatsApp, sendWhatsAppMessage } = require('./services/whatsapp');
 const { startReminderJob } = require('./jobs/reminders');
 
@@ -20,6 +21,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+app.use('/api', createWhatsAppTestRouter({ sendWhatsAppMessage }));
 app.use('/api', createBookingRouter({ sendWhatsAppMessage }));
 
 app.listen(port, () => {
