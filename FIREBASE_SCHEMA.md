@@ -64,4 +64,5 @@ Estados sugeridos:
 - `pending`
 - `confirmed`
 - `cancelled`
-- `completed`
+- `realizada`
+- `no_llego`
