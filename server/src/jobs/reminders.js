@@ -30,7 +30,9 @@ function getStartsAt(appointment) {
 }
 
 function canSendSoonReminder(appointment, now, windowMinutes = 60) {
-  if (appointment.todayReminderSent || appointment.remindedToday) {
+  const repeatEnabled = process.env.REMINDER_REPEAT_ENABLED !== 'false';
+
+  if (!repeatEnabled && (appointment.todayReminderSent || appointment.remindedToday)) {
     return false;
   }
 
@@ -102,7 +104,8 @@ async function sendSoonReminders(sendWhatsAppMessage) {
     if (result.sent) {
       await item.ref.update({
         reminded: true,
-        todayReminderSent: true,
+        todayReminderSent: process.env.REMINDER_REPEAT_ENABLED === 'false',
+        lastReminderAt: admin.firestore.FieldValue.serverTimestamp(),
         todayReminderAt: admin.firestore.FieldValue.serverTimestamp(),
         remindedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
