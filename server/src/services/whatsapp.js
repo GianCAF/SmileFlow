@@ -137,18 +137,56 @@ function resolveReadyWaiters(value) {
   readyWaiters = [];
 }
 
-function waitForReady(timeoutMs = 30000) {
+function markWhatsAppReady(source) {
+  isReady = true;
+  isInitializing = false;
+  latestQr = null;
+  resolveReadyWaiters(true);
+  console.log(`[whatsapp] Sesion lista (${source})`);
+}
+
+async function refreshReadyState() {
+  if (!client || isReady) {
+    return isReady;
+  }
+
+  try {
+    const state = await client.getState();
+    console.log('[whatsapp] Estado actual:', state);
+
+    if (state === 'CONNECTED') {
+      markWhatsAppReady('getState');
+      return true;
+    }
+  } catch (error) {
+    console.log('[whatsapp] Estado aun no disponible:', error.message);
+  }
+
+  return false;
+}
+
+async function waitForReady(timeoutMs = 30000) {
   if (isReady) {
-    return Promise.resolve(true);
+    return true;
   }
 
   return new Promise((resolve) => {
+    const interval = setInterval(async () => {
+      if (await refreshReadyState()) {
+        clearInterval(interval);
+        readyWaiters = readyWaiters.filter((waiter) => waiter !== resolve);
+        resolve(true);
+      }
+    }, 2000);
+
     const timeout = setTimeout(() => {
+      clearInterval(interval);
       readyWaiters = readyWaiters.filter((waiter) => waiter !== resolve);
       resolve(false);
     }, timeoutMs);
 
     readyWaiters.push((value) => {
+      clearInterval(interval);
       clearTimeout(timeout);
       resolve(value);
     });
@@ -264,16 +302,15 @@ function initializeWhatsApp() {
   });
 
   client.on('ready', () => {
-    isReady = true;
-    isInitializing = false;
-    latestQr = null;
-    resolveReadyWaiters(true);
-    console.log('[whatsapp] Sesion lista');
+    markWhatsAppReady('ready');
   });
 
   client.on('authenticated', () => {
     latestQr = null;
     console.log('[whatsapp] Autenticacion recibida');
+    setTimeout(() => {
+      refreshReadyState();
+    }, 2000);
   });
 
   client.on('auth_failure', (message) => {
