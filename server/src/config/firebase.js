@@ -18,9 +18,15 @@ function getCredential() {
 }
 
 if (!admin.apps.length) {
-  admin.initializeApp({
+  const appConfig = {
     credential: getCredential(),
-  });
+  };
+
+  if (process.env.FIREBASE_PROJECT_ID) {
+    appConfig.projectId = process.env.FIREBASE_PROJECT_ID;
+  }
+
+  admin.initializeApp(appConfig);
 }
 
 const db = admin.firestore();
