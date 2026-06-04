@@ -176,6 +176,12 @@ const WebChatbot = () => {
 
     const startsAt = new Date(`${bookingData.dateId}T${bookingData.time}:00`);
 
+    if (startsAt <= new Date()) {
+      setFlow('booking_date');
+      setBooking(null);
+      return 'Ese horario ya paso. Dime otra fecha para mostrarte horarios disponibles.';
+    }
+
     await addDoc(collection(db, 'appointments'), {
       name: name.trim(),
       email: user.email || userProfile?.email || '',
@@ -217,6 +223,10 @@ const WebChatbot = () => {
 
     if (!availability.available) {
       return `Ese dia (${availability.dateId}) no hay horario de atencion registrado. Puedes indicarme otra fecha?`;
+    }
+
+    if (!availability.slots.length) {
+      return `Para ${availability.dateId} ya no quedan horarios futuros disponibles. Puedes indicarme otra fecha?`;
     }
 
     setBooking({

@@ -150,6 +150,7 @@ const LoginPage = () => {
                 value={form.phone}
                 onChange={updateField}
                 inputMode="tel"
+                required
                 className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
               />
             </label>

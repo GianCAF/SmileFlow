@@ -19,6 +19,10 @@ function createBookingRouter({ sendWhatsAppMessage }) {
         return res.status(400).json({ error: 'Fecha u hora invalida.' });
       }
 
+      if (startsAt <= new Date()) {
+        return res.status(400).json({ error: 'No puedes agendar una cita en una fecha u hora que ya paso.' });
+      }
+
       const normalizedPhone = normalizePhone(phone);
       const appointment = {
         name: String(name).trim(),

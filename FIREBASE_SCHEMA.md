@@ -54,6 +54,7 @@ Citas creadas por landing, dashboard o chatbot.
   "startsAt": "timestamp",
   "status": "confirmed",
   "reminded": false,
+  "todayReminderSent": false,
   "source": "web-chatbot",
   "createdAt": "serverTimestamp"
 }

@@ -49,10 +49,6 @@ export function parseRequestedDate(messageBody, now = new Date()) {
     const date = new Date(year, month, day);
 
     if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
-      if (!numericMatch[3] && date < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
-        date.setFullYear(date.getFullYear() + 1);
-      }
-
       return date;
     }
   }
@@ -65,10 +61,6 @@ export function parseRequestedDate(messageBody, now = new Date()) {
     const date = new Date(now.getFullYear(), month, day);
 
     if (date.getMonth() === month && date.getDate() === day) {
-      if (date < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
-        date.setFullYear(date.getFullYear() + 1);
-      }
-
       return date;
     }
   }
@@ -85,6 +77,19 @@ function minutesToTime(totalMinutes) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function isSameDay(firstDate, secondDate) {
+  return firstDate.getFullYear() === secondDate.getFullYear()
+    && firstDate.getMonth() === secondDate.getMonth()
+    && firstDate.getDate() === secondDate.getDate();
+}
+
+function isFutureSlot(date, time, now = new Date()) {
+  const [hours, minutes] = String(time || '00:00').split(':').map(Number);
+  const startsAt = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes);
+
+  return startsAt > now;
 }
 
 export function toDisplayTime(time) {
@@ -126,7 +131,8 @@ export async function getAvailabilityForDate(date) {
 
   const availability = availabilitySnapshot.data();
   const slotMinutes = Number(availability.slotMinutes || 60);
-  const slots = buildTimeSlots(availability.startTime, availability.endTime, slotMinutes);
+  const slots = buildTimeSlots(availability.startTime, availability.endTime, slotMinutes)
+    .filter((slot) => isFutureSlot(date, slot));
 
   return {
     dateId,
@@ -144,6 +150,14 @@ function buildAvailabilityReply(result) {
   }
 
   const range = `${toDisplayTime(result.startTime)} a ${toDisplayTime(result.endTime)}`;
+
+  if (!result.slots.length) {
+    const resultDate = new Date(`${result.dateId}T00:00:00`);
+
+    return isSameDay(resultDate, new Date())
+      ? `Para hoy (${result.dateId}) ya no quedan horarios futuros disponibles. Puedes indicarme otra fecha?`
+      : `Ese dia (${result.dateId}) ya paso. Puedes indicarme una fecha futura?`;
+  }
 
   return [
     `Para el ${result.dateId} tenemos horario de ${range}.`,
