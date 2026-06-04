@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import ClientPortal from './components/ClientPortal';
 import DentistDashboard from './components/DentistDashboard';
 import LoginPage from './components/LoginPage';
 import Services from './components/Services';
 import WebChatbot from './components/WebChatbot';
+import { auth, db } from './firebase';
 import heroImage from './assets/hero.png';
 
 const UserIcon = () => (
@@ -12,7 +16,35 @@ const UserIcon = () => (
   </svg>
 );
 
+function getDisplayName(user, profile) {
+  return profile?.displayName || user?.displayName || user?.email?.split('@')[0] || 'Paciente';
+}
+
 function App() {
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      setProfile(null);
+
+      if (!currentUser) return;
+
+      try {
+        const snapshot = await getDoc(doc(db, 'users', currentUser.uid));
+        setProfile(snapshot.exists() ? snapshot.data() : null);
+      } catch {
+        setProfile(null);
+      }
+    });
+  }, []);
+
+  const logout = async () => {
+    await signOut(auth);
+    window.location.href = '/';
+  };
+
   if (window.location.pathname.startsWith('/dashboard')) {
     return <DentistDashboard />;
   }
@@ -36,15 +68,36 @@ function App() {
             <a className="hover:text-blush" href="#servicios">Servicios</a>
             <a className="hover:text-blush" href="#agenda">Agenda</a>
             <a className="hover:text-blush" href="#contacto">Contacto</a>
-            <a className="hover:text-blush" href="/login">Login</a>
+            {user ? <a className="hover:text-blush" href="/portal">Historial</a> : <a className="hover:text-blush" href="/login">Login</a>}
           </div>
-          <a
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-full bg-blush px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-dark-blush/20 transition hover:bg-dark-blush"
-          >
-            <UserIcon />
-            Login
-          </a>
+          {user ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="hidden max-w-[150px] truncate text-sm font-black text-gray-800 sm:inline">
+                {getDisplayName(user, profile)}
+              </span>
+              <a
+                href="/portal"
+                className="rounded-full bg-blush px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-dark-blush/20 transition hover:bg-dark-blush"
+              >
+                Ver historial
+              </a>
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-full border border-beige bg-white px-4 py-2.5 text-sm font-black text-gray-700 transition hover:border-blush hover:text-blush"
+              >
+                Salir
+              </button>
+            </div>
+          ) : (
+            <a
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-blush px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-dark-blush/20 transition hover:bg-dark-blush"
+            >
+              <UserIcon />
+              Login
+            </a>
+          )}
         </nav>
       </header>
 

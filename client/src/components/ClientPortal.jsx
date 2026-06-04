@@ -42,13 +42,21 @@ const ClientPortal = () => {
             <h1 className="mt-2 text-4xl font-black text-gray-950">Portal del paciente</h1>
             <p className="mt-2 text-gray-600">{user.email}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => signOut(auth).then(() => { window.location.href = '/'; })}
-            className="rounded-full border border-beige bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:border-blush hover:text-blush"
-          >
-            Salir
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="/"
+              className="rounded-full bg-blush px-5 py-3 text-sm font-black text-white transition hover:bg-dark-blush"
+            >
+              Inicio
+            </a>
+            <button
+              type="button"
+              onClick={() => signOut(auth).then(() => { window.location.href = '/'; })}
+              className="rounded-full border border-beige bg-white px-5 py-3 text-sm font-black text-gray-700 transition hover:border-blush hover:text-blush"
+            >
+              Salir
+            </button>
+          </div>
         </header>
 
         <section className="mt-8">
@@ -66,7 +74,7 @@ const ClientPortal = () => {
           ) : (
             <div className="mt-4 rounded-2xl border border-dashed border-blush/40 bg-soft-rose/35 p-6">
               <p className="font-bold text-gray-800">Aun no hay citas vinculadas a tu cuenta.</p>
-              <p className="mt-2 text-sm text-gray-600">Cuando el consultorio confirme una cita con tu perfil, aparecera aqui.</p>
+              <p className="mt-2 text-sm text-gray-600">Cuando agendes desde el chat con tu sesion activa, tu cita aparecera aqui.</p>
             </div>
           )}
         </section>

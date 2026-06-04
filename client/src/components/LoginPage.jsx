@@ -46,7 +46,7 @@ const LoginPage = () => {
       setLoading(true);
       try {
         const profile = await getProfile(user);
-        window.location.href = profile.role === 'admin' ? '/dashboard' : '/portal';
+        window.location.href = profile.role === 'admin' ? '/dashboard' : '/';
       } catch (error) {
         setStatus(error.message);
         await signOut(auth);
@@ -85,7 +85,7 @@ const LoginPage = () => {
           role: 'client',
           createdAt: serverTimestamp(),
         });
-        window.location.href = '/portal';
+        window.location.href = '/';
         return;
       }
 
@@ -110,8 +110,8 @@ const LoginPage = () => {
         <h1 className="mt-2 text-3xl font-black text-gray-950">{mode === 'login' ? 'Acceso' : 'Registro cliente'}</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600">
           {mode === 'login'
-            ? 'Ingresa para validar tu informacion. Si eres admin, iremos al dashboard; si eres paciente, veras tu portal.'
-            : 'Crea tu cuenta para consultar tu historial de citas y validar tus datos.'}
+            ? 'Ingresa para mantener tu sesion activa y volver al inicio con tus accesos de paciente.'
+            : 'Crea tu cuenta para agendar desde el chat y consultar tu historial cuando lo necesites.'}
         </p>
 
         <div className="mt-6 grid grid-cols-2 rounded-full bg-white p-1">
