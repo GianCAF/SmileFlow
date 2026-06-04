@@ -29,7 +29,7 @@ function getStartsAt(appointment) {
   return new Date(`${appointment.date || ''}T${appointment.time || '00:00'}:00`);
 }
 
-function canSendTodayReminder(appointment, now) {
+function canSendSoonReminder(appointment, now, windowMinutes = 60) {
   if (appointment.todayReminderSent || appointment.remindedToday) {
     return false;
   }
@@ -39,7 +39,9 @@ function canSendTodayReminder(appointment, now) {
   }
 
   const startsAt = getStartsAt(appointment);
-  return !Number.isNaN(startsAt.getTime()) && startsAt > now;
+  const windowEnd = new Date(now.getTime() + (windowMinutes * 60 * 1000));
+
+  return !Number.isNaN(startsAt.getTime()) && startsAt > now && startsAt <= windowEnd;
 }
 
 async function getRegisteredPhone(appointment) {
@@ -61,17 +63,25 @@ async function getRegisteredPhone(appointment) {
   return userSnapshot.data().phone || '';
 }
 
-async function sendTodayReminders(sendWhatsAppMessage) {
+async function sendSoonReminders(sendWhatsAppMessage) {
   const { admin, db } = require('../config/firebase');
   const now = new Date();
   const today = toDateId(now);
+  const windowMinutes = Number(process.env.REMINDER_WINDOW_MINUTES || 60);
 
   const snapshot = await db
     .collection('appointments')
     .where('date', '==', today)
     .get();
 
-  const candidates = snapshot.docs.filter((item) => canSendTodayReminder(item.data(), now));
+  const candidates = snapshot.docs.filter((item) => canSendSoonReminder(item.data(), now, windowMinutes));
+
+  console.log('[cron] Buscando recordatorios proximos:', {
+    today,
+    totalToday: snapshot.size,
+    candidates: candidates.length,
+    windowMinutes,
+  });
 
   await Promise.all(candidates.map(async (item) => {
     const appointment = item.data();
@@ -96,6 +106,17 @@ async function sendTodayReminders(sendWhatsAppMessage) {
         todayReminderAt: admin.firestore.FieldValue.serverTimestamp(),
         remindedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+      console.log('[cron] Recordatorio enviado:', {
+        appointmentId: item.id,
+        phone,
+        time: appointment.time,
+      });
+    } else {
+      console.log('[cron] Recordatorio no enviado:', {
+        appointmentId: item.id,
+        phone,
+        reason: result.reason,
+      });
     }
   }));
 
@@ -108,10 +129,10 @@ function startReminderJob(sendWhatsAppMessage) {
     return null;
   }
 
-  return cron.schedule(process.env.REMINDER_CRON || '*/15 * * * *', async () => {
+  return cron.schedule(process.env.REMINDER_CRON || '* * * * *', async () => {
     try {
-      const count = await sendTodayReminders(sendWhatsAppMessage);
-      console.log(`[cron] Recordatorios de hoy revisados. Candidatos: ${count}`);
+      const count = await sendSoonReminders(sendWhatsAppMessage);
+      console.log(`[cron] Recordatorios proximos revisados. Candidatos: ${count}`);
     } catch (error) {
       console.error('[cron] Error enviando recordatorios:', error);
     }
@@ -119,6 +140,6 @@ function startReminderJob(sendWhatsAppMessage) {
 }
 
 module.exports = {
-  sendTodayReminders,
+  sendSoonReminders,
   startReminderJob,
 };
