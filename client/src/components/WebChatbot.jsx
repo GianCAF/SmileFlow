@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, authPersistenceReady, db } from '../firebase';
 import { getAvailabilityForDate, parseRequestedDate, toDisplayTime } from '../lib/availability';
@@ -35,7 +35,7 @@ const rescheduleMessage = 'Para cambiar o cancelar una cita, enviame tu nombre c
 const handoffMessage = 'Claro, te comunico con la dentista. Puedes escribirnos por WhatsApp para atencion personalizada.';
 const fallbackMessage = 'No estoy seguro de que opcion necesitas. Escribe Hola o Menu para ver las opciones disponibles.';
 
-const initialLoginForm = { email: '', password: '', phone: '' };
+const initialLoginForm = { name: '', email: '', password: '', phone: '' };
 
 const RobotIcon = ({ className = 'h-5 w-5' }) => (
   <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
@@ -150,6 +150,8 @@ const WebChatbot = () => {
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [quickAuthMode, setQuickAuthMode] = useState('login');
+  const [quickAuthNeedsPhone, setQuickAuthNeedsPhone] = useState(false);
   const [loginForm, setLoginForm] = useState(initialLoginForm);
   const [loginStatus, setLoginStatus] = useState('');
   const scrollRef = useRef(null);
@@ -273,7 +275,7 @@ const WebChatbot = () => {
       return [
         `Perfecto, apartaremos ${toDisplayTime(selectedTime)}.`,
         '',
-        'Para agendar necesito que inicies sesion rapidamente aqui abajo.',
+        'Para agendar inicia sesion o crea tu cuenta aqui abajo.',
       ].join('\n');
     }
 
@@ -359,23 +361,57 @@ const WebChatbot = () => {
 
     try {
       await authPersistenceReady;
-      const credential = await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
-      const userProfile = await getUserProfile(credential.user);
       const normalizedPhone = normalizePhone(loginForm.phone);
-      const mergedProfile = {
-        ...(userProfile || {}),
-        email: credential.user.email,
-        phone: normalizedPhone,
-      };
+      let credential;
+      let mergedProfile;
 
-      await setDoc(doc(db, 'users', credential.user.uid), {
-        email: credential.user.email,
-        phone: normalizedPhone,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
+      if (quickAuthMode === 'register') {
+        credential = await createUserWithEmailAndPassword(auth, loginForm.email, loginForm.password);
+
+        if (loginForm.name) {
+          await updateProfile(credential.user, { displayName: loginForm.name });
+        }
+
+        mergedProfile = {
+          displayName: loginForm.name,
+          email: credential.user.email,
+          phone: normalizedPhone,
+          role: 'client',
+        };
+
+        await setDoc(doc(db, 'users', credential.user.uid), {
+          ...mergedProfile,
+          createdAt: serverTimestamp(),
+        });
+      } else {
+        credential = await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
+        const userProfile = await getUserProfile(credential.user);
+        mergedProfile = {
+          ...(userProfile || {}),
+          email: credential.user.email,
+        };
+
+        if (normalizedPhone) {
+          mergedProfile.phone = normalizedPhone;
+
+          await setDoc(doc(db, 'users', credential.user.uid), {
+            email: credential.user.email,
+            phone: normalizedPhone,
+            updatedAt: serverTimestamp(),
+          }, { merge: true });
+        }
+      }
+
+      if (!mergedProfile.phone) {
+        setQuickAuthNeedsPhone(true);
+        setLoginStatus('Tu cuenta no tiene WhatsApp registrado. Escribelo para recibir recordatorios.');
+        setLoading(false);
+        return;
+      }
 
       setCurrentUser(credential.user);
       setProfile(mergedProfile);
+      setQuickAuthNeedsPhone(false);
       setLoginForm(initialLoginForm);
 
       const reply = await createChatAppointment({
@@ -385,7 +421,9 @@ const WebChatbot = () => {
       });
       pushBotMessage(reply);
     } catch {
-      setLoginStatus('No pude iniciar sesion. Revisa correo y contrasena, o crea tu cuenta en Login.');
+      setLoginStatus(quickAuthMode === 'register'
+        ? 'No pude crear la cuenta. Revisa los datos e intenta de nuevo.'
+        : 'No pude iniciar sesion. Revisa correo y contrasena, o cambia a Crear cuenta.');
     } finally {
       setLoading(false);
     }
@@ -429,7 +467,43 @@ const WebChatbot = () => {
 
             {flow === 'booking_login' ? (
               <form onSubmit={submitQuickLogin} className="mr-6 rounded-2xl bg-white px-4 py-4 shadow-sm">
-                <p className="text-sm font-black text-gray-900">Login rapido</p>
+                <p className="text-sm font-black text-gray-900">{quickAuthMode === 'login' ? 'Login rapido' : 'Crear cuenta'}</p>
+                <div className="mt-3 grid grid-cols-2 rounded-full bg-cream p-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuickAuthMode('login');
+                      setQuickAuthNeedsPhone(false);
+                      setLoginStatus('');
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-xs font-black transition ${quickAuthMode === 'login' ? 'bg-blush text-white' : 'text-gray-600'}`}
+                  >
+                    Entrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuickAuthMode('register');
+                      setQuickAuthNeedsPhone(false);
+                      setLoginStatus('');
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-xs font-black transition ${quickAuthMode === 'register' ? 'bg-blush text-white' : 'text-gray-600'}`}
+                  >
+                    Nueva cuenta
+                  </button>
+                </div>
+                {quickAuthMode === 'register' ? (
+                  <label className="mt-3 block">
+                    <span className="text-xs font-bold text-gray-600">Nombre completo</span>
+                    <input
+                      name="name"
+                      value={loginForm.name}
+                      onChange={updateLoginField}
+                      required
+                      className="mt-1 w-full rounded-xl border border-beige bg-cream px-3 py-2 text-sm outline-none focus:border-blush"
+                    />
+                  </label>
+                ) : null}
                 <label className="mt-3 block">
                   <span className="text-xs font-bold text-gray-600">Correo</span>
                   <input
@@ -441,17 +515,19 @@ const WebChatbot = () => {
                     className="mt-1 w-full rounded-xl border border-beige bg-cream px-3 py-2 text-sm outline-none focus:border-blush"
                   />
                 </label>
-                <label className="mt-2 block">
-                  <span className="text-xs font-bold text-gray-600">WhatsApp</span>
-                  <input
-                    name="phone"
-                    value={loginForm.phone}
-                    onChange={updateLoginField}
-                    inputMode="tel"
-                    required
-                    className="mt-1 w-full rounded-xl border border-beige bg-cream px-3 py-2 text-sm outline-none focus:border-blush"
-                  />
-                </label>
+                {quickAuthMode === 'register' || quickAuthNeedsPhone ? (
+                  <label className="mt-2 block">
+                    <span className="text-xs font-bold text-gray-600">WhatsApp</span>
+                    <input
+                      name="phone"
+                      value={loginForm.phone}
+                      onChange={updateLoginField}
+                      inputMode="tel"
+                      required
+                      className="mt-1 w-full rounded-xl border border-beige bg-cream px-3 py-2 text-sm outline-none focus:border-blush"
+                    />
+                  </label>
+                ) : null}
                 <label className="mt-2 block">
                   <span className="text-xs font-bold text-gray-600">Contrasena</span>
                   <input
@@ -470,9 +546,8 @@ const WebChatbot = () => {
                     disabled={loading}
                     className="rounded-full bg-blush px-4 py-2 text-xs font-black text-white transition hover:bg-dark-blush disabled:opacity-70"
                   >
-                    Entrar y agendar
+                    {quickAuthMode === 'login' ? 'Entrar y agendar' : 'Crear y agendar'}
                   </button>
-                  <a href="/login" className="text-xs font-black text-blush hover:text-dark-blush">Crear cuenta</a>
                 </div>
               </form>
             ) : null}

@@ -82,9 +82,9 @@ const LoginPage = () => {
 
     try {
       await authPersistenceReady;
-      const normalizedPhone = normalizePhone(form.phone);
 
       if (mode === 'register') {
+        const normalizedPhone = normalizePhone(form.phone);
         const credential = await createUserWithEmailAndPassword(auth, form.email, form.password);
 
         if (form.name) {
@@ -104,13 +104,6 @@ const LoginPage = () => {
 
       const credential = await signInWithEmailAndPassword(auth, form.email, form.password);
       const profile = await getProfile(credential.user);
-
-      await setDoc(doc(db, 'users', credential.user.uid), {
-        email: credential.user.email,
-        phone: normalizedPhone,
-        updatedAt: serverTimestamp(),
-      }, { merge: true });
-
       window.location.href = profile.role === 'admin' ? '/dashboard' : '/';
     } catch (error) {
       setStatus(error.message);
@@ -133,7 +126,7 @@ const LoginPage = () => {
         <h1 className="mt-2 text-3xl font-black text-gray-950">{mode === 'login' ? 'Acceso' : 'Registro cliente'}</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600">
           {mode === 'login'
-            ? 'Ingresa tu correo, contrasena y WhatsApp para mantener activos tus recordatorios.'
+            ? 'Ingresa con tu correo y contrasena para volver al inicio con tu sesion activa.'
             : 'Crea tu cuenta con WhatsApp para agendar desde el chat y recibir recordatorios.'}
         </p>
 
@@ -181,17 +174,19 @@ const LoginPage = () => {
           />
         </label>
 
-        <label className="mt-4 block">
-          <span className="text-sm font-bold text-gray-700">WhatsApp para recordatorios</span>
-          <input
-            name="phone"
-            value={form.phone}
-            onChange={updateField}
-            inputMode="tel"
-            required
-            className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
-          />
-        </label>
+        {mode === 'register' ? (
+          <label className="mt-4 block">
+            <span className="text-sm font-bold text-gray-700">WhatsApp para recordatorios</span>
+            <input
+              name="phone"
+              value={form.phone}
+              onChange={updateField}
+              inputMode="tel"
+              required
+              className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
+            />
+          </label>
+        ) : null}
 
         <label className="mt-4 block">
           <span className="text-sm font-bold text-gray-700">Contrasena</span>
