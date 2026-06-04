@@ -33,6 +33,15 @@ async function getProfile(user) {
   return profile;
 }
 
+function normalizePhone(rawPhone) {
+  const digits = String(rawPhone || '').replace(/\D/g, '');
+
+  if (!digits) return '';
+  if (digits.length === 10) return `52${digits}`;
+
+  return digits;
+}
+
 const LoginPage = () => {
   const [mode, setMode] = useState('login');
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
@@ -73,6 +82,7 @@ const LoginPage = () => {
 
     try {
       await authPersistenceReady;
+      const normalizedPhone = normalizePhone(form.phone);
 
       if (mode === 'register') {
         const credential = await createUserWithEmailAndPassword(auth, form.email, form.password);
@@ -84,7 +94,7 @@ const LoginPage = () => {
         await setDoc(doc(db, 'users', credential.user.uid), {
           displayName: form.name,
           email: form.email,
-          phone: form.phone,
+          phone: normalizedPhone,
           role: 'client',
           createdAt: serverTimestamp(),
         });
@@ -97,7 +107,7 @@ const LoginPage = () => {
 
       await setDoc(doc(db, 'users', credential.user.uid), {
         email: credential.user.email,
-        phone: form.phone,
+        phone: normalizedPhone,
         updatedAt: serverTimestamp(),
       }, { merge: true });
 

@@ -19,6 +19,9 @@ session/
 .wwebjs_auth/
 .wwebjs_cache/
 
+# Firebase Admin local credentials
+serviceAccountKey.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

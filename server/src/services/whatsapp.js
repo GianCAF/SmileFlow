@@ -2,7 +2,7 @@ const qrImage = require('qrcode');
 const qrcode = require('qrcode-terminal');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const { buildAvailabilityReplyForMessage } = require('./availability');
-const { toWhatsAppId } = require('../utils/phone');
+const { normalizePhone, toWhatsAppId } = require('../utils/phone');
 
 let client;
 let isReady = false;
@@ -325,14 +325,33 @@ async function sendWhatsAppMessage(phone, body) {
     return { sent: false, reason: 'whatsapp_not_ready' };
   }
 
+  const normalizedPhone = normalizePhone(phone);
   const chatId = toWhatsAppId(phone);
 
   if (!chatId) {
     return { sent: false, reason: 'invalid_phone' };
   }
 
-  await client.sendMessage(chatId, body);
-  return { sent: true };
+  try {
+    const numberId = await client.getNumberId(normalizedPhone);
+
+    if (!numberId?._serialized) {
+      return { sent: false, reason: 'phone_not_on_whatsapp' };
+    }
+
+    await client.sendMessage(numberId._serialized, body);
+    return { sent: true };
+  } catch (error) {
+    console.error('[whatsapp] No se pudo enviar mensaje:', {
+      phone: normalizedPhone,
+      reason: error.message,
+    });
+
+    return {
+      sent: false,
+      reason: error.message || 'whatsapp_send_failed',
+    };
+  }
 }
 
 function getWhatsAppQr() {

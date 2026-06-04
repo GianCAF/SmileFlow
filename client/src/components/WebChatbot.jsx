@@ -125,6 +125,15 @@ function getProfileName(user, profile) {
   return profile?.displayName || user?.displayName || user?.email?.split('@')[0] || '';
 }
 
+function normalizePhone(rawPhone) {
+  const digits = String(rawPhone || '').replace(/\D/g, '');
+
+  if (!digits) return '';
+  if (digits.length === 10) return `52${digits}`;
+
+  return digits;
+}
+
 async function getUserProfile(user) {
   if (!user) return null;
 
@@ -352,15 +361,16 @@ const WebChatbot = () => {
       await authPersistenceReady;
       const credential = await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
       const userProfile = await getUserProfile(credential.user);
+      const normalizedPhone = normalizePhone(loginForm.phone);
       const mergedProfile = {
         ...(userProfile || {}),
         email: credential.user.email,
-        phone: loginForm.phone,
+        phone: normalizedPhone,
       };
 
       await setDoc(doc(db, 'users', credential.user.uid), {
         email: credential.user.email,
-        phone: loginForm.phone,
+        phone: normalizedPhone,
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
