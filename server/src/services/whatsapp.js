@@ -8,6 +8,7 @@ let client;
 let isReady = false;
 let isInitializing = false;
 let latestQr = null;
+let readyWaiters = [];
 
 const conversationState = new Map();
 
@@ -131,6 +132,29 @@ function getMenuOption(text) {
   return null;
 }
 
+function resolveReadyWaiters(value) {
+  readyWaiters.forEach((resolve) => resolve(value));
+  readyWaiters = [];
+}
+
+function waitForReady(timeoutMs = 30000) {
+  if (isReady) {
+    return Promise.resolve(true);
+  }
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      readyWaiters = readyWaiters.filter((waiter) => waiter !== resolve);
+      resolve(false);
+    }, timeoutMs);
+
+    readyWaiters.push((value) => {
+      clearTimeout(timeout);
+      resolve(value);
+    });
+  });
+}
+
 async function buildAutoReply(messageBody, chatId) {
   const text = normalizeKeywordText(messageBody);
   const state = getChatState(chatId);
@@ -243,6 +267,7 @@ function initializeWhatsApp() {
     isReady = true;
     isInitializing = false;
     latestQr = null;
+    resolveReadyWaiters(true);
     console.log('[whatsapp] Sesion lista');
   });
 
@@ -254,6 +279,7 @@ function initializeWhatsApp() {
   client.on('auth_failure', (message) => {
     isReady = false;
     isInitializing = false;
+    resolveReadyWaiters(false);
     console.error('[whatsapp] Fallo de autenticacion:', message);
   });
 
@@ -261,6 +287,7 @@ function initializeWhatsApp() {
     isReady = false;
     isInitializing = false;
     client = null;
+    resolveReadyWaiters(false);
     console.log('[whatsapp] Sesion desconectada:', reason);
   });
 
@@ -320,9 +347,19 @@ async function shutdownWhatsApp() {
 }
 
 async function sendWhatsAppMessage(phone, body) {
-  if (!client || !isReady) {
-    console.log('[whatsapp] Mensaje omitido porque la sesion aun no esta lista:', { phone, body });
-    return { sent: false, reason: 'whatsapp_not_ready' };
+  if (!client) {
+    console.log('[whatsapp] Mensaje omitido porque no hay cliente WhatsApp:', { phone, body });
+    return { sent: false, reason: 'whatsapp_client_missing' };
+  }
+
+  if (!isReady) {
+    console.log('[whatsapp] Esperando sesion lista antes de enviar mensaje:', { phone });
+    const becameReady = await waitForReady(Number(process.env.WHATSAPP_READY_TIMEOUT_MS || 30000));
+
+    if (!becameReady || !isReady) {
+      console.log('[whatsapp] Mensaje omitido porque la sesion aun no esta lista:', { phone, body });
+      return { sent: false, reason: 'whatsapp_not_ready' };
+    }
   }
 
   const normalizedPhone = normalizePhone(phone);
