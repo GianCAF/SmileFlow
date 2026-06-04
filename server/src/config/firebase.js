@@ -1,6 +1,12 @@
 const admin = require('firebase-admin');
+const path = require('path');
 
 function getCredential() {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH) {
+    const serviceAccountPath = path.resolve(process.cwd(), process.env.FIREBASE_SERVICE_ACCOUNT_PATH);
+    return admin.credential.cert(require(serviceAccountPath));
+  }
+
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     const json = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8');
     return admin.credential.cert(JSON.parse(json));
