@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createUserWithEmailAndPassword, onAuthStateChanged, signInWithEmailAndPassword, signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, authPersistenceReady, db } from '../firebase';
@@ -38,10 +38,12 @@ const LoginPage = () => {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (user) => {
       if (!user) return;
+      if (submittingRef.current) return;
 
       setLoading(true);
       try {
@@ -67,6 +69,7 @@ const LoginPage = () => {
     event.preventDefault();
     setStatus('');
     setLoading(true);
+    submittingRef.current = true;
 
     try {
       await authPersistenceReady;
@@ -89,10 +92,20 @@ const LoginPage = () => {
         return;
       }
 
-      await signInWithEmailAndPassword(auth, form.email, form.password);
+      const credential = await signInWithEmailAndPassword(auth, form.email, form.password);
+      const profile = await getProfile(credential.user);
+
+      await setDoc(doc(db, 'users', credential.user.uid), {
+        email: credential.user.email,
+        phone: form.phone,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      window.location.href = profile.role === 'admin' ? '/dashboard' : '/';
     } catch (error) {
       setStatus(error.message);
       setLoading(false);
+      submittingRef.current = false;
     }
   };
 
@@ -110,8 +123,8 @@ const LoginPage = () => {
         <h1 className="mt-2 text-3xl font-black text-gray-950">{mode === 'login' ? 'Acceso' : 'Registro cliente'}</h1>
         <p className="mt-3 text-sm leading-6 text-gray-600">
           {mode === 'login'
-            ? 'Ingresa para mantener tu sesion activa y volver al inicio con tus accesos de paciente.'
-            : 'Crea tu cuenta para agendar desde el chat y consultar tu historial cuando lo necesites.'}
+            ? 'Ingresa tu correo, contrasena y WhatsApp para mantener activos tus recordatorios.'
+            : 'Crea tu cuenta con WhatsApp para agendar desde el chat y recibir recordatorios.'}
         </p>
 
         <div className="mt-6 grid grid-cols-2 rounded-full bg-white p-1">
@@ -143,17 +156,6 @@ const LoginPage = () => {
                 className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
               />
             </label>
-            <label className="mt-4 block">
-              <span className="text-sm font-bold text-gray-700">WhatsApp</span>
-              <input
-                name="phone"
-                value={form.phone}
-                onChange={updateField}
-                inputMode="tel"
-                required
-                className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
-              />
-            </label>
           </>
         ) : null}
 
@@ -164,6 +166,18 @@ const LoginPage = () => {
             type="email"
             value={form.email}
             onChange={updateField}
+            required
+            className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
+          />
+        </label>
+
+        <label className="mt-4 block">
+          <span className="text-sm font-bold text-gray-700">WhatsApp para recordatorios</span>
+          <input
+            name="phone"
+            value={form.phone}
+            onChange={updateField}
+            inputMode="tel"
             required
             className="mt-2 w-full rounded-2xl border border-beige bg-white px-4 py-3 outline-none focus:border-blush focus:ring-4 focus:ring-blush/10"
           />

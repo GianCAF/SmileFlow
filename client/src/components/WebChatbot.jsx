@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword } from 'firebase/auth';
-import { addDoc, collection, doc, getDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, authPersistenceReady, db } from '../firebase';
 import { getAvailabilityForDate, parseRequestedDate, toDisplayTime } from '../lib/availability';
 
@@ -35,7 +35,7 @@ const rescheduleMessage = 'Para cambiar o cancelar una cita, enviame tu nombre c
 const handoffMessage = 'Claro, te comunico con la dentista. Puedes escribirnos por WhatsApp para atencion personalizada.';
 const fallbackMessage = 'No estoy seguro de que opcion necesitas. Escribe Hola o Menu para ver las opciones disponibles.';
 
-const initialLoginForm = { email: '', password: '' };
+const initialLoginForm = { email: '', password: '', phone: '' };
 
 const RobotIcon = ({ className = 'h-5 w-5' }) => (
   <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
@@ -352,14 +352,26 @@ const WebChatbot = () => {
       await authPersistenceReady;
       const credential = await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
       const userProfile = await getUserProfile(credential.user);
+      const mergedProfile = {
+        ...(userProfile || {}),
+        email: credential.user.email,
+        phone: loginForm.phone,
+      };
+
+      await setDoc(doc(db, 'users', credential.user.uid), {
+        email: credential.user.email,
+        phone: loginForm.phone,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
       setCurrentUser(credential.user);
-      setProfile(userProfile);
+      setProfile(mergedProfile);
       setLoginForm(initialLoginForm);
 
       const reply = await createChatAppointment({
         user: credential.user,
-        userProfile,
-        patientName: getProfileName(credential.user, userProfile),
+        userProfile: mergedProfile,
+        patientName: getProfileName(credential.user, mergedProfile),
       });
       pushBotMessage(reply);
     } catch {
@@ -415,6 +427,17 @@ const WebChatbot = () => {
                     type="email"
                     value={loginForm.email}
                     onChange={updateLoginField}
+                    required
+                    className="mt-1 w-full rounded-xl border border-beige bg-cream px-3 py-2 text-sm outline-none focus:border-blush"
+                  />
+                </label>
+                <label className="mt-2 block">
+                  <span className="text-xs font-bold text-gray-600">WhatsApp</span>
+                  <input
+                    name="phone"
+                    value={loginForm.phone}
+                    onChange={updateLoginField}
+                    inputMode="tel"
                     required
                     className="mt-1 w-full rounded-xl border border-beige bg-cream px-3 py-2 text-sm outline-none focus:border-blush"
                   />
