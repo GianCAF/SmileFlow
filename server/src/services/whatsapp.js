@@ -193,6 +193,18 @@ async function waitForReady(timeoutMs = 30000) {
   });
 }
 
+function getWhatsAppPhoneCandidates(rawPhone) {
+  const digits = String(rawPhone || '').replace(/\D/g, '');
+  const normalizedPhone = normalizePhone(rawPhone);
+  const candidates = [normalizedPhone];
+
+  if ((process.env.DEFAULT_COUNTRY_CODE || '52') === '52' && digits.length === 10) {
+    candidates.push(`521${digits}`);
+  }
+
+  return [...new Set(candidates.filter(Boolean))];
+}
+
 async function buildAutoReply(messageBody, chatId) {
   const text = normalizeKeywordText(messageBody);
   const state = getChatState(chatId);
@@ -399,33 +411,40 @@ async function sendWhatsAppMessage(phone, body) {
     }
   }
 
-  const normalizedPhone = normalizePhone(phone);
-  const chatId = toWhatsAppId(phone);
+  const phoneCandidates = getWhatsAppPhoneCandidates(phone);
+  const chatId = toWhatsAppId(phoneCandidates[0]);
 
   if (!chatId) {
     return { sent: false, reason: 'invalid_phone' };
   }
 
-  try {
-    const numberId = await client.getNumberId(normalizedPhone);
+  const errors = [];
 
-    if (!numberId?._serialized) {
-      return { sent: false, reason: 'phone_not_on_whatsapp' };
+  for (const phoneCandidate of phoneCandidates) {
+    try {
+      const numberId = await client.getNumberId(phoneCandidate);
+
+      if (!numberId?._serialized) {
+        errors.push(`${phoneCandidate}: phone_not_on_whatsapp`);
+        continue;
+      }
+
+      await client.sendMessage(numberId._serialized, body);
+      return { sent: true, phone: phoneCandidate };
+    } catch (error) {
+      errors.push(`${phoneCandidate}: ${error.message}`);
     }
-
-    await client.sendMessage(numberId._serialized, body);
-    return { sent: true };
-  } catch (error) {
-    console.error('[whatsapp] No se pudo enviar mensaje:', {
-      phone: normalizedPhone,
-      reason: error.message,
-    });
-
-    return {
-      sent: false,
-      reason: error.message || 'whatsapp_send_failed',
-    };
   }
+
+  console.error('[whatsapp] No se pudo enviar mensaje:', {
+    phoneCandidates,
+    reason: errors.join(' | '),
+  });
+
+  return {
+    sent: false,
+    reason: errors.join(' | ') || 'whatsapp_send_failed',
+  };
 }
 
 function getWhatsAppQr() {
